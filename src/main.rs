@@ -32,15 +32,12 @@ async fn main() {
     let manager = PostgresConnectionManager::new_from_stringlike(db_url, NoTls).unwrap();
     let pool = Pool::builder().build(manager).await.unwrap();
 
-    // build our application with a route
     let app = Router::new()
         .route("/users", get(get_users))
         .route("/users/:id", get(get_user))
         .route("/users", post(create_user))
         .with_state(pool);
 
-    // run our app with hyper
-    // `axum::Server` is a re-export of `hyper::Server`
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
     debug!("listening on {}", addr);
     axum::Server::bind(&addr)
@@ -77,8 +74,6 @@ async fn get_users(
 
     info!("responding with {:?}", users);
 
-    // this will be converted into a JSON response
-    // with a status code of `201 Created`
     Ok(Json(users))
 }
 
@@ -131,8 +126,6 @@ async fn create_user(
 
     let user = User { id, username };
 
-    // this will be converted into a JSON response
-    // with a status code of `201 Created`
     Ok(Json(user))
 }
 
