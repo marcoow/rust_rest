@@ -56,21 +56,24 @@ async fn get_users(
 ) -> Result<Json<Vec<User>>, (StatusCode, String)> {
     let conn = pool.get().await.map_err(internal_error)?;
 
-    let row = conn
-        .query_one("select id, username from users where id = $1", &[&1])
+    let rows = conn
+        .query("select id, username from users", &[])
         .await
         .map_err(internal_error)?;
 
-    let id = row.get(0);
-    let username = row.get(1);
+    let users = rows
+        .iter()
+        .map(|row| User {
+            id: row.get(0),
+            username: row.get(1),
+        })
+        .collect();
 
-    let user = User { id, username };
-
-    info!("responding with {:?}", user);
+    info!("responding with {:?}", users);
 
     // this will be converted into a JSON response
     // with a status code of `201 Created`
-    Ok(Json(vec![user]))
+    Ok(Json(users))
 }
 
 #[derive(Deserialize)]
