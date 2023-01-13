@@ -1,7 +1,12 @@
-use axum::{extract::State, http::StatusCode, routing::get, Json, Router};
+use axum::{
+    extract::State,
+    http::StatusCode,
+    routing::{get, post},
+    Json, Router,
+};
 use bb8::Pool;
 use bb8_postgres::PostgresConnectionManager;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::net::SocketAddr;
 use tokio_postgres::NoTls;
 use tracing::{debug, info, Level};
@@ -25,6 +30,7 @@ async fn main() {
     // build our application with a route
     let app = Router::new()
         .route("/users", get(get_users))
+        .route("/users", post(create_user))
         .with_state(pool);
 
     // run our app with hyper
@@ -65,6 +71,35 @@ async fn get_users(
     // this will be converted into a JSON response
     // with a status code of `201 Created`
     Ok(Json(vec![user]))
+}
+
+#[derive(Deserialize)]
+struct CreateUser {
+    username: String,
+}
+
+async fn create_user(
+    State(pool): State<ConnectionPool>,
+    Json(payload): Json<CreateUser>,
+) -> Result<Json<User>, (StatusCode, String)> {
+    let username = payload.username;
+
+    let conn = pool.get().await.map_err(internal_error)?;
+    let rows = conn
+        .query(
+            "insert into users (username) values ($1) returning id",
+            &[&username],
+        )
+        .await
+        .map_err(internal_error)?;
+
+    let id = rows[0].get(0);
+
+    let user = User { id, username };
+
+    // this will be converted into a JSON response
+    // with a status code of `201 Created`
+    Ok(Json(user))
 }
 
 fn internal_error<E>(err: E) -> (StatusCode, String)
