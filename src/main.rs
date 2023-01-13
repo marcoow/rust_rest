@@ -13,6 +13,7 @@ use std::net::SocketAddr;
 use tokio_postgres::NoTls;
 use tracing::{debug, info, Level};
 use tracing_subscriber::FmtSubscriber;
+use validator::Validate;
 
 #[tokio::main]
 async fn main() {
@@ -102,8 +103,9 @@ async fn get_user(
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Validate)]
 struct CreateUser {
+    #[validate(length(min = 1))]
     username: String,
 }
 
@@ -111,22 +113,27 @@ async fn create_user(
     State(pool): State<ConnectionPool>,
     Json(payload): Json<CreateUser>,
 ) -> Result<Json<User>, (StatusCode, String)> {
-    let username = payload.username;
+    match payload.validate() {
+        Ok(_) => {
+            let username = payload.username;
 
-    let conn = pool.get().await.map_err(internal_error)?;
-    let rows = conn
-        .query(
-            "insert into users (username) values ($1) returning id",
-            &[&username],
-        )
-        .await
-        .map_err(internal_error)?;
+            let conn = pool.get().await.map_err(internal_error)?;
+            let rows = conn
+                .query(
+                    "insert into users (username) values ($1) returning id",
+                    &[&username],
+                )
+                .await
+                .map_err(internal_error)?;
 
-    let id = rows[0].get(0);
+            let id = rows[0].get(0);
 
-    let user = User { id, username };
+            let user = User { id, username };
 
-    Ok(Json(user))
+            Ok(Json(user))
+        }
+        Err(err) => Err((StatusCode::UNPROCESSABLE_ENTITY, err.to_string())),
+    }
 }
 
 fn internal_error<E>(err: E) -> (StatusCode, String)
