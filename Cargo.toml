@@ -5,7 +5,10 @@ edition = "2021"
 
 [dependencies]
 axum = "0.6.2"
+bb8 = "0.8.0"
+bb8-postgres = "0.8.1"
 serde = { version = "1.0", features = ["derive"] } 
 tokio = { version = "1", features = ["full"] }
+tokio-postgres = "0.7.7"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
