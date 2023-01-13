@@ -1,4 +1,5 @@
 use axum::{
+    extract::Path,
     extract::State,
     http::StatusCode,
     routing::{get, post},
@@ -30,6 +31,7 @@ async fn main() {
     // build our application with a route
     let app = Router::new()
         .route("/users", get(get_users))
+        .route("/users/:id", get(get_user))
         .route("/users", post(create_user))
         .with_state(pool);
 
@@ -74,6 +76,31 @@ async fn get_users(
     // this will be converted into a JSON response
     // with a status code of `201 Created`
     Ok(Json(users))
+}
+
+async fn get_user(
+    State(pool): State<ConnectionPool>,
+    Path(id): Path<i32>,
+) -> Result<Json<User>, (StatusCode, String)> {
+    let conn = pool.get().await.map_err(internal_error)?;
+
+    if let Ok(row) = conn
+        .query_one("select id, username from users where id = $1", &[&id])
+        .await
+    {
+        let user = User {
+            id: row.get(0),
+            username: row.get(1),
+        };
+
+        info!("responding with {:?}", user);
+
+        Ok(Json(user))
+    } else {
+        info!("no user found for id {}", id);
+
+        Err((StatusCode::NOT_FOUND, "".to_string()))
+    }
 }
 
 #[derive(Deserialize)]
