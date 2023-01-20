@@ -52,7 +52,7 @@ type ConnectionPool = Pool<PostgresConnectionManager<NoTls>>;
 #[derive(Serialize, Debug)]
 struct User {
     id: i32,
-    username: String,
+    name: String,
 }
 
 async fn get_users(
@@ -61,7 +61,7 @@ async fn get_users(
     let conn = pool.get().await.map_err(internal_error)?;
 
     let rows = conn
-        .query("select id, username from users", &[])
+        .query("select id, name from users", &[])
         .await
         .map_err(internal_error)?;
 
@@ -69,7 +69,7 @@ async fn get_users(
         .iter()
         .map(|row| User {
             id: row.get(0),
-            username: row.get(1),
+            name: row.get(1),
         })
         .collect();
 
@@ -85,12 +85,12 @@ async fn get_user(
     let conn = pool.get().await.map_err(internal_error)?;
 
     if let Ok(row) = conn
-        .query_one("select id, username from users where id = $1", &[&id])
+        .query_one("select id, name from users where id = $1", &[&id])
         .await
     {
         let user = User {
             id: row.get(0),
-            username: row.get(1),
+            name: row.get(1),
         };
 
         info!("responding with {:?}", user);
@@ -106,7 +106,7 @@ async fn get_user(
 #[derive(Deserialize, Validate)]
 struct CreateUser {
     #[validate(length(min = 1))]
-    username: String,
+    name: String,
 }
 
 async fn create_user(
@@ -115,20 +115,20 @@ async fn create_user(
 ) -> Result<Json<User>, (StatusCode, String)> {
     match payload.validate() {
         Ok(_) => {
-            let username = payload.username;
+            let name = payload.name;
 
             let conn = pool.get().await.map_err(internal_error)?;
             let rows = conn
                 .query(
-                    "insert into users (username) values ($1) returning id",
-                    &[&username],
+                    "insert into users (name) values ($1) returning id",
+                    &[&name],
                 )
                 .await
                 .map_err(internal_error)?;
 
             let id = rows[0].get(0);
 
-            let user = User { id, username };
+            let user = User { id, name };
 
             Ok(Json(user))
         }

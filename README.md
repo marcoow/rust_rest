@@ -6,11 +6,7 @@ This is a simply REST server written in Rust with
 
 ## Commands
 
-### Running the server
-
-```bash
-cargo run
-```
+### Setting up the database
 
 The server requires a database to run. By default it connects to
 `postgresql://rust_rest:rust_rest@localhost/rust_rest`. The repo contains a
@@ -27,12 +23,27 @@ You can also pass a connection string to a different (PostgreSql) database:
 cargo run "postgresql://<user>:<password>@<host>/<database>"
 ```
 
+Once the database is running, it needs to be migrated so that the required
+tables get created etc. Install the `refinery_cli` crate and use that to
+migrate the database:
+
+```bash
+cargo install refinery_cli
+refinery migrate
+```
+
+### Running the server
+
+```bash
+cargo run
+```
+
 ### Making requests with `curl`
 
 #### Creating a new user
 
 ```bash
-curl -X POST localhost:3000/users -H 'Content-Type: application/json' -d '{"username": "<username>"}'
+curl -X POST localhost:3000/users -H 'Content-Type: application/json' -d '{"name": "<name>"}'
 ```
 
 #### Loading a single user
