@@ -8,7 +8,8 @@ This is a simply REST server written in Rust with
 
 ### Setting up the database
 
-The server requires a database to run. By default it connects to
+The server requires a database to run. The connection string is read from the
+[`.env`](.env) file and defaults to
 `postgresql://rust_rest:rust_rest@localhost/rust_rest`. The repo contains a
 Docker setup for a PostgreSql database that will work with that connection
 string. Run via:
@@ -17,10 +18,11 @@ string. Run via:
 docker compose up
 ```
 
-You can also pass a connection string to a different (PostgreSql) database:
+You can also change the connection string and connect to a different
+(PostgreSql) database of course:
 
 ```bash
-cargo run "postgresql://<user>:<password>@<host>/<database>"
+DATABASE_URL="postgresql://<user>:<password>@<host>/<database>"
 ```
 
 Once the database is running, it needs to be migrated so that the required

@@ -7,8 +7,8 @@ use axum::{
 };
 use bb8::Pool;
 use bb8_postgres::PostgresConnectionManager;
+use dotenv_codegen::dotenv;
 use serde::{Deserialize, Serialize};
-use std::env;
 use std::net::SocketAddr;
 use tokio_postgres::NoTls;
 use tracing::{debug, info, Level};
@@ -23,12 +23,7 @@ async fn main() {
 
     tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
 
-    let args: Vec<String> = env::args().collect();
-    let db_url = if args.len() == 2 {
-        &args[1]
-    } else {
-        "postgresql://rust_rest:rust_rest@localhost/rust_rest"
-    };
+    let db_url = dotenv!("DATABASE_URL");
 
     let manager = PostgresConnectionManager::new_from_stringlike(db_url, NoTls).unwrap();
     let pool = Pool::builder().build(manager).await.unwrap();
