@@ -26,12 +26,10 @@ DATABASE_URL="postgresql://<user>:<password>@<host>/<database>"
 ```
 
 Once the database is running, it needs to be migrated so that the required
-tables get created etc. Install the `refinery_cli` crate and use that to
-migrate the database:
+tables get created etc.:
 
 ```bash
-cargo install refinery_cli
-refinery migrate
+cargo run --bin db
 ```
 
 ### Running the server

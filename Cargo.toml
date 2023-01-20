@@ -2,6 +2,7 @@
 name = "rust_rest"
 version = "0.1.0"
 edition = "2021"
+default-run = "rust_rest"
 
 [dependencies]
 axum = "0.6.2"
