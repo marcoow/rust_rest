@@ -5,6 +5,7 @@ use tracing::info;
 use validator::Validate;
 
 #[derive(Serialize, Debug)]
+#[cfg_attr(test, derive(Deserialize))]
 pub struct User {
     id: i32,
     name: String,
@@ -88,5 +89,56 @@ pub async fn create_user(
             Ok(Json(user))
         }
         Err(err) => Err((StatusCode::UNPROCESSABLE_ENTITY, err.to_string())),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use axum::{body::Body, http::Request, routing::get, Router};
+    use bb8::Pool;
+    use bb8_postgres::PostgresConnectionManager;
+    use dotenv_codegen::dotenv;
+    use tokio_postgres::NoTls;
+    use tower::ServiceExt;
+
+    type UsersList = Vec<User>;
+
+    #[tokio::test]
+    async fn test_get_users() {
+        let db_url = dotenv!("DATABASE_URL");
+
+        let manager = PostgresConnectionManager::new_from_stringlike(db_url, NoTls).unwrap();
+        let pool = Pool::builder().build(manager).await.unwrap();
+
+        let app = Router::new()
+            .route("/users", get(get_users))
+            .with_state(pool.clone());
+
+        let conn = pool.get().await.unwrap();
+
+        conn.query(
+            "insert into users (name) values ($1) returning id",
+            &[&"Test User"],
+        )
+        .await
+        .unwrap();
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/users")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = hyper::body::to_bytes(response.into_body()).await.unwrap();
+        let users: UsersList = serde_json::from_slice::<Vec<User>>(&body).unwrap();
+        assert_eq!(users.len(), 1);
+        assert_eq!(users.get(0).unwrap().name, "Test User");
     }
 }

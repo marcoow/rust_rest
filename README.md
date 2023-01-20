@@ -58,3 +58,9 @@ curl localhost:3000/users/<id>
 curl localhost:3000/users
 ```
 
+### Running the test
+
+```bash
+cargo test
+```
+
