@@ -1,0 +1,11 @@
+version: "3.9"
+services:
+  postgres:
+    image: "postgres"
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: rust_rest
+      POSTGRES_USER: rust_rest
+      POSTGRES_DB: rust_rest
+    ports:
+      - 5432:5432

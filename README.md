@@ -13,8 +13,15 @@ cargo run
 ```
 
 The server requires a database to run. By default it connects to
-`postgresql://rust_rest:rust_rest@localhost/rust_rest` but you can pass a
-connection string to a different (PostgreSql) database:
+`postgresql://rust_rest:rust_rest@localhost/rust_rest`. The repo contains a
+Docker setup for a PostgreSql database that will work with that connection
+string. Run via:
+
+```bash
+docker compose up
+```
+
+You can also pass a connection string to a different (PostgreSql) database:
 
 ```bash
 cargo run "postgresql://<user>:<password>@<host>/<database>"
