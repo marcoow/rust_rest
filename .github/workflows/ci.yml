@@ -1,0 +1,97 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request: {}
+
+
+jobs:
+  cargo_check:
+    name: "Cargo Check"
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: rust-toolchain
+      uses: actions-rs/toolchain@v1.0.3
+      with:
+        toolchain: stable
+    
+    - name: cargo check
+      uses: actions-rs/cargo@v1.0.1
+      with:
+        command: check
+
+  rustfmt:
+    name: "Rust Format"
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: rust-toolchain
+      uses: actions-rs/toolchain@v1.0.3
+      with:
+        toolchain: stable
+        components: rustfmt
+
+    - name: fmt
+      uses: actions-rs/cargo@v1.0.1
+      with:
+        command: fmt
+        args: --all -- --check
+
+  clippy:
+    name: "Clippy"
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: rust-toolchain
+      uses: actions-rs/toolchain@v1.0.3
+      with:
+        toolchain: stable
+        components: clippy
+    
+    - name: clippy
+      uses: actions-rs/cargo@v1.0.1
+      with:
+        command: clippy
+
+  test:
+    name: "Test"
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_DB: rust_rest
+          POSTGRES_USER: rust_rest
+          POSTGRES_PASSWORD: rust_rest
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: rust-toolchain
+      uses: actions-rs/toolchain@v1.0.3
+      with:
+        toolchain: stable
+        components: clippy
+
+    - name: migrate
+      run: cargo run --bin db
+
+    - name: test
+      run: cargo test
