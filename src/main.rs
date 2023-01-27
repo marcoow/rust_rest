@@ -5,6 +5,7 @@ use tracing_subscriber::FmtSubscriber;
 
 mod controllers;
 mod routes;
+mod state;
 
 #[tokio::main]
 async fn main() {
@@ -14,7 +15,8 @@ async fn main() {
 
     tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
 
-    let app = routes::routes().await;
+    let app_state = state::app_state().await;
+    let app = routes::routes().with_state(app_state);
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
     debug!("listening on {}", addr);

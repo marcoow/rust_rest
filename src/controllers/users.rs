@@ -1,4 +1,4 @@
-use crate::{internal_error, routes::ConnectionPool};
+use crate::{internal_error, state::AppState};
 use axum::{extract::Path, extract::State, http::StatusCode, Json};
 use serde::{Deserialize, Serialize};
 use tracing::info;
@@ -12,9 +12,9 @@ pub struct User {
 }
 
 pub async fn get_users(
-    State(pool): State<ConnectionPool>,
+    State(state): State<AppState>,
 ) -> Result<Json<Vec<User>>, (StatusCode, String)> {
-    let conn = pool.get().await.map_err(internal_error)?;
+    let conn = state.db_pool.get().await.map_err(internal_error)?;
 
     let rows = conn
         .query("select id, name from users", &[])
@@ -35,10 +35,10 @@ pub async fn get_users(
 }
 
 pub async fn get_user(
-    State(pool): State<ConnectionPool>,
+    State(state): State<AppState>,
     Path(id): Path<i32>,
 ) -> Result<Json<User>, (StatusCode, String)> {
-    let conn = pool.get().await.map_err(internal_error)?;
+    let conn = state.db_pool.get().await.map_err(internal_error)?;
 
     if let Ok(row) = conn
         .query_one("select id, name from users where id = $1", &[&id])
@@ -66,14 +66,14 @@ pub struct CreateUser {
 }
 
 pub async fn create_user(
-    State(pool): State<ConnectionPool>,
+    State(state): State<AppState>,
     Json(payload): Json<CreateUser>,
 ) -> Result<Json<User>, (StatusCode, String)> {
     match payload.validate() {
         Ok(_) => {
             let name = payload.name;
 
-            let conn = pool.get().await.map_err(internal_error)?;
+            let conn = state.db_pool.get().await.map_err(internal_error)?;
             let rows = conn
                 .query(
                     "insert into users (name) values ($1) returning id",
@@ -113,7 +113,9 @@ mod tests {
 
         let app = Router::new()
             .route("/users", get(get_users))
-            .with_state(pool.clone());
+            .with_state(AppState {
+                db_pool: pool.clone(),
+            });
 
         let conn = pool.get().await.unwrap();
 
