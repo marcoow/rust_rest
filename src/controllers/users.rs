@@ -95,7 +95,8 @@ pub async fn create_user(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use axum::{body::Body, http::Request, routing::get, Router};
+    use crate::routes::routes;
+    use axum::{body::Body, http::Request};
     use bb8::Pool;
     use bb8_postgres::PostgresConnectionManager;
     use core::str::FromStr;
@@ -141,11 +142,9 @@ mod tests {
         let manager = PostgresConnectionManager::new(test_db_config, NoTls);
         let pool = Pool::builder().build(manager).await.unwrap();
 
-        let app = Router::new()
-            .route("/users", get(get_users))
-            .with_state(AppState {
-                db_pool: pool.clone(),
-            });
+        let app = routes().with_state(AppState {
+            db_pool: pool.clone(),
+        });
 
         let conn = pool.get().await.unwrap();
 
