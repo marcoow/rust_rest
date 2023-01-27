@@ -846,6 +846,7 @@ dependencies = [
  "bb8-postgres",
  "dotenv_codegen",
  "hyper",
+ "rand",
  "refinery",
  "serde",
  "serde_json",
