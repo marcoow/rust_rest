@@ -25,8 +25,15 @@ async fn main() {
         }
     });
 
-    embedded::migrations::runner()
+    let report = embedded::migrations::runner()
         .run_async(&mut client)
         .await
         .unwrap();
+
+    let migrations_applied = report.applied_migrations().len();
+
+    match migrations_applied {
+        0 => println!("ℹ️ There were no pendign migrations to apply."),
+        n => println!("✅ Applied {n} migrations."),
+    }
 }
