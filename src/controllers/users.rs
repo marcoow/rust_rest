@@ -1,4 +1,4 @@
-use crate::{internal_error, ConnectionPool};
+use crate::{internal_error, routes::ConnectionPool};
 use axum::{extract::Path, extract::State, http::StatusCode, Json};
 use serde::{Deserialize, Serialize};
 use tracing::info;
