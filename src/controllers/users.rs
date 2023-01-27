@@ -96,7 +96,8 @@ pub async fn create_user(
 mod tests {
     use super::*;
     use crate::routes::routes;
-    use axum::{body::Body, http::Request};
+    use crate::state::ConnectionPool;
+    use axum::{body::Body, http::Request, Router};
     use bb8::Pool;
     use bb8_postgres::PostgresConnectionManager;
     use core::str::FromStr;
@@ -108,8 +109,7 @@ mod tests {
 
     type UsersList = Vec<User>;
 
-    #[tokio::test]
-    async fn test_get_users() {
+    async fn setup() -> (Router, ConnectionPool) {
         let db_url = dotenv!("DATABASE_URL");
         let config = Config::from_str(db_url).unwrap();
         let db_name = config.get_dbname().unwrap();
@@ -127,18 +127,16 @@ mod tests {
             .map(char::from)
             .collect();
         let test_db_name = format!("{}_{}", db_name, test_db_suffix).to_lowercase();
-        let res = client
+        client
             .execute(
                 &format!("create database {} template {}", test_db_name, db_name),
                 &[],
             )
             .await
             .unwrap();
-        println!("{:?}", res);
 
         let mut test_db_config = config.clone();
         test_db_config.dbname(&test_db_name);
-        println!("{:?}", test_db_config);
         let manager = PostgresConnectionManager::new(test_db_config, NoTls);
         let pool = Pool::builder().build(manager).await.unwrap();
 
@@ -146,7 +144,14 @@ mod tests {
             db_pool: pool.clone(),
         });
 
-        let conn = pool.get().await.unwrap();
+        (app, pool)
+    }
+
+    #[tokio::test]
+    async fn test_get_users() {
+        let (app, db) = setup().await;
+
+        let conn = db.get().await.unwrap();
 
         conn.query(
             "insert into users (name) values ($1) returning id",
