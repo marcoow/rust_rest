@@ -101,7 +101,7 @@ mod tests {
     use bb8::Pool;
     use bb8_postgres::PostgresConnectionManager;
     use core::str::FromStr;
-    use dotenv_codegen::dotenv;
+    use dotenvy_macro::dotenv;
     use rand::distributions::Alphanumeric;
     use rand::{thread_rng, Rng};
     use tokio_postgres::{config::Config, NoTls};

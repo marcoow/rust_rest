@@ -1,6 +1,6 @@
 use bb8::Pool;
 use bb8_postgres::PostgresConnectionManager;
-use dotenv_codegen::dotenv;
+use dotenvy_macro::dotenv;
 use tokio_postgres::NoTls;
 
 pub type ConnectionPool = Pool<PostgresConnectionManager<NoTls>>;
