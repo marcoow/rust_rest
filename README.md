@@ -4,6 +4,13 @@ This is a simply REST server written in Rust with
 [axum](https://crates.io/crates/axum) and
 [tokio-postgres](https://crates.io/crates/tokio-postgres).
 
+I'm using this to figure out a good structure for such a project and answer
+questions like:
+
+* where to put what (controllers, app state, models, etc, etc.)
+* how to handle migrations (and how to run them)
+* how to handle configuration for different environments
+
 ## Commands
 
 ### Setting up the database
