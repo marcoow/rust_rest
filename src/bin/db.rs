@@ -1,4 +1,4 @@
-use dotenv_codegen::dotenv;
+use dotenvy_macro::dotenv;
 use tokio_postgres::NoTls;
 use tracing::{error, Level};
 use tracing_subscriber::FmtSubscriber;
