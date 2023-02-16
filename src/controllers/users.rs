@@ -95,9 +95,9 @@ pub async fn create_user(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_helpers::setup;
-    use axum::{body::Body, http::Request};
-    use tower::ServiceExt;
+    use crate::test_helpers::{request, setup};
+    use axum::body::Body;
+    use std::collections::HashMap;
 
     type UsersList = Vec<User>;
 
@@ -114,15 +114,7 @@ mod tests {
         .await
         .unwrap();
 
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/users")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
+        let response = request(app, "/users", HashMap::new(), Body::empty()).await;
 
         assert_eq!(response.status(), StatusCode::OK);
 

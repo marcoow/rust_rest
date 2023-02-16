@@ -1,14 +1,16 @@
 use crate::routes::routes;
 use crate::state::AppState;
 use crate::state::ConnectionPool;
-use axum::Router;
+use axum::{body::Body, http::Request, response::Response, Router};
 use bb8::Pool;
 use bb8_postgres::PostgresConnectionManager;
 use core::str::FromStr;
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
+use std::collections::HashMap;
 use std::env;
 use tokio_postgres::{config::Config, NoTls};
+use tower::ServiceExt;
 
 pub async fn setup() -> (Router, ConnectionPool) {
     dotenvy::from_filename(".env.test").unwrap();
@@ -47,4 +49,16 @@ pub async fn setup() -> (Router, ConnectionPool) {
     });
 
     (app, pool)
+}
+
+pub async fn request(app: Router, uri: &str, headers: HashMap<&str, &str>, body: Body) -> Response {
+    let mut request_builder = Request::builder().uri(uri);
+
+    for (key, value) in headers {
+        request_builder = request_builder.header(key, value);
+    }
+
+    let request = request_builder.body(body);
+
+    app.oneshot(request.unwrap()).await.unwrap()
 }
