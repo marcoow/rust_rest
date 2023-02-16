@@ -12,7 +12,7 @@ use std::env;
 use tokio_postgres::{config::Config, NoTls};
 use tower::ServiceExt;
 
-pub async fn setup() -> (Router, ConnectionPool) {
+async fn prepare_db() -> Config {
     dotenvy::from_filename(".env.test").unwrap();
     let db_url = env::var("DATABASE_URL").unwrap();
     let config = Config::from_str(&db_url).unwrap();
@@ -41,6 +41,12 @@ pub async fn setup() -> (Router, ConnectionPool) {
 
     let mut test_db_config = config.clone();
     test_db_config.dbname(&test_db_name);
+
+    test_db_config
+}
+
+pub async fn setup() -> (Router, ConnectionPool) {
+    let test_db_config = prepare_db().await;
     let manager = PostgresConnectionManager::new(test_db_config, NoTls);
     let pool = Pool::builder().build(manager).await.unwrap();
 
