@@ -8,6 +8,7 @@ default-run = "rust_rest"
 axum = "0.6.2"
 bb8 = "0.8.0"
 bb8-postgres = "0.8.1"
+dotenvy = "0.15.6"
 dotenvy_macro = "0.15.1"
 rand = "0.8.5"
 refinery = { version = "0.8", features = ["tokio-postgres"]}
@@ -19,7 +20,6 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 validator = { version = "0.15", features = ["derive"] }
 
 [dev-dependencies]
-dotenvy = "0.15.6"
 serde_json = "1.0"
 tower = { version = "0.4", features = ["util"] }
 hyper = { version = "0.14", features = ["full"] }
