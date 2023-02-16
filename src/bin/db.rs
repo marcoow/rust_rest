@@ -21,11 +21,21 @@ async fn main() {
 
     match args.len() {
         0..=1 => println!(r#"❌ Specify command, e.g. """migrate"""#),
-        _n => match args[1].as_str() {
+        n => match args[1].as_str() {
             "migrate" => {
-                let db_url = dotenv!("DATABASE_URL");
-                let (mut client, connection) =
-                    tokio_postgres::connect(db_url, NoTls).await.unwrap();
+                if n == 2 {
+                    dotenvy::from_filename(".env").unwrap();
+                } else if n == 3 && args[2].as_str() == "--test" {
+                    dotenvy::from_filename(".env.test").unwrap();
+                } else {
+                    println!(r#"❌ Invalid command """{:?}"""#, args);
+                    return;
+                }
+                let db_url = env::var("DATABASE_URL").unwrap();
+
+                let (mut client, connection) = tokio_postgres::connect(db_url.as_str(), NoTls)
+                    .await
+                    .unwrap();
 
                 tokio::spawn(async move {
                     if let Err(e) = connection.await {

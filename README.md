@@ -67,6 +67,14 @@ curl localhost:3000/users
 
 ### Running the test
 
+Migrate the test database:
+
+```bash
+cargo run --bin db migrate --test
+```
+
+Then run the tests:
+
 ```bash
 cargo test
 ```
