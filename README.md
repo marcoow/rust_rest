@@ -36,7 +36,7 @@ Once the database is running, it needs to be migrated so that the required
 tables get created etc.:
 
 ```bash
-cargo run --bin db
+cargo run --bin db migrate
 ```
 
 ### Running the server

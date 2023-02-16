@@ -1,4 +1,5 @@
 use dotenvy_macro::dotenv;
+use std::env;
 use tokio_postgres::NoTls;
 use tracing::{error, Level};
 use tracing_subscriber::FmtSubscriber;
@@ -16,24 +17,35 @@ async fn main() {
 
     tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
 
-    let db_url = dotenv!("DATABASE_URL");
-    let (mut client, connection) = tokio_postgres::connect(db_url, NoTls).await.unwrap();
+    let args: Vec<String> = env::args().collect();
 
-    tokio::spawn(async move {
-        if let Err(e) = connection.await {
-            error!("An error occured while connecting to database: {}", e);
-        }
-    });
+    match args.len() {
+        0..=1 => println!(r#"❌ Specify command, e.g. """migrate"""#),
+        _n => match args[1].as_str() {
+            "migrate" => {
+                let db_url = dotenv!("DATABASE_URL");
+                let (mut client, connection) =
+                    tokio_postgres::connect(db_url, NoTls).await.unwrap();
 
-    let report = embedded::migrations::runner()
-        .run_async(&mut client)
-        .await
-        .unwrap();
+                tokio::spawn(async move {
+                    if let Err(e) = connection.await {
+                        error!("An error occured while connecting to database: {}", e);
+                    }
+                });
 
-    let migrations_applied = report.applied_migrations().len();
+                let report = embedded::migrations::runner()
+                    .run_async(&mut client)
+                    .await
+                    .unwrap();
 
-    match migrations_applied {
-        0 => println!("ℹ️ There were no pendign migrations to apply."),
-        n => println!("✅ Applied {n} migrations."),
+                let migrations_applied = report.applied_migrations().len();
+
+                match migrations_applied {
+                    0 => println!("ℹ️ There were no pendign migrations to apply."),
+                    n => println!("✅ Applied {n} migrations."),
+                }
+            }
+            other => println!("❌ Unknown command {:?}!", other),
+        },
     }
 }
