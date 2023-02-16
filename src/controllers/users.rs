@@ -101,20 +101,21 @@ mod tests {
     use bb8::Pool;
     use bb8_postgres::PostgresConnectionManager;
     use core::str::FromStr;
-    use dotenvy_macro::dotenv;
     use rand::distributions::Alphanumeric;
     use rand::{thread_rng, Rng};
+    use std::env;
     use tokio_postgres::{config::Config, NoTls};
     use tower::ServiceExt;
 
     type UsersList = Vec<User>;
 
     async fn setup() -> (Router, ConnectionPool) {
-        let db_url = dotenv!("DATABASE_URL");
-        let config = Config::from_str(db_url).unwrap();
+        dotenvy::from_filename(".env.test").unwrap();
+        let db_url = env::var("DATABASE_URL").unwrap();
+        let config = Config::from_str(&db_url).unwrap();
         let db_name = config.get_dbname().unwrap();
 
-        let (client, connection) = tokio_postgres::connect(db_url, NoTls).await.unwrap();
+        let (client, connection) = tokio_postgres::connect(&db_url, NoTls).await.unwrap();
         tokio::spawn(async move {
             if let Err(e) = connection.await {
                 eprintln!("connection error: {}", e);
