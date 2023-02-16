@@ -7,6 +7,9 @@ mod controllers;
 mod routes;
 mod state;
 
+#[cfg(test)]
+mod test_helpers;
+
 #[tokio::main]
 async fn main() {
     let subscriber = FmtSubscriber::builder()
