@@ -844,6 +844,7 @@ dependencies = [
  "axum",
  "bb8",
  "bb8-postgres",
+ "dotenvy",
  "dotenvy_macro",
  "hyper",
  "rand",

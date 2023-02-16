@@ -19,6 +19,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 validator = { version = "0.15", features = ["derive"] }
 
 [dev-dependencies]
+dotenvy = "0.15.6"
 serde_json = "1.0"
 tower = { version = "0.4", features = ["util"] }
 hyper = { version = "0.14", features = ["full"] }

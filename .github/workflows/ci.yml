@@ -70,16 +70,16 @@ jobs:
       postgres:
         image: postgres
         env:
-          POSTGRES_DB: rust_rest
-          POSTGRES_USER: rust_rest
-          POSTGRES_PASSWORD: rust_rest
+          POSTGRES_DB: rust_rest_test
+          POSTGRES_USER: rust_rest_test
+          POSTGRES_PASSWORD: rust_rest_test
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
         ports:
-          - 5432:5432
+          - 5433:5432
 
     steps:
     - uses: actions/checkout@v3
