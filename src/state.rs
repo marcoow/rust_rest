@@ -1,6 +1,7 @@
 use bb8::Pool;
 use bb8_postgres::PostgresConnectionManager;
-use dotenvy_macro::dotenv;
+use dotenvy::dotenv;
+use std::env;
 use tokio_postgres::NoTls;
 
 pub type ConnectionPool = Pool<PostgresConnectionManager<NoTls>>;
@@ -11,9 +12,10 @@ pub struct AppState {
 }
 
 pub async fn app_state() -> AppState {
-    let db_url = dotenv!("DATABASE_URL");
+    dotenv().ok();
+    let db_url = env::var("DATABASE_URL").expect("No DATABASE_URL set – cannot start server!");
 
-    let manager = PostgresConnectionManager::new_from_stringlike(db_url, NoTls).unwrap();
+    let manager = PostgresConnectionManager::new_from_stringlike(&db_url, NoTls).unwrap();
     let pool = Pool::builder().build(manager).await.unwrap();
 
     AppState { db_pool: pool }
