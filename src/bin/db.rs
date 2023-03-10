@@ -1,4 +1,3 @@
-use dotenvy_macro::dotenv;
 use std::env;
 use tokio_postgres::NoTls;
 use tracing::{error, Level};
