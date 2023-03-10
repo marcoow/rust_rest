@@ -13,8 +13,8 @@ use tokio_postgres::{config::Config, NoTls};
 use tower::ServiceExt;
 
 async fn prepare_db() -> Config {
-    dotenvy::from_filename(".env.test").unwrap();
-    let db_url = env::var("DATABASE_URL").unwrap();
+    dotenvy::from_filename(".env.test").ok();
+    let db_url = env::var("DATABASE_URL").expect("No DATABASE_URL set – cannot run tests!");
     let config = Config::from_str(&db_url).unwrap();
     let db_name = config.get_dbname().unwrap();
 
