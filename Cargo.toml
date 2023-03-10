@@ -9,7 +9,6 @@ axum = "0.6.2"
 bb8 = "0.8.0"
 bb8-postgres = "0.8.1"
 dotenvy = "0.15.6"
-dotenvy_macro = "0.15.1"
 rand = "0.8.5"
 refinery = { version = "0.8", features = ["tokio-postgres"]}
 serde = { version = "1.0", features = ["derive"] } 
