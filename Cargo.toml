@@ -8,6 +8,7 @@ default-run = "rust_rest"
 axum = "0.6.2"
 bb8 = "0.8.0"
 bb8-postgres = "0.8.1"
+clap = "4.1.8"
 dotenvy = "0.15.6"
 rand = "0.8.5"
 refinery = { version = "0.8", features = ["tokio-postgres"]}
