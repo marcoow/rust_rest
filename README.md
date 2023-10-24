@@ -70,7 +70,7 @@ curl localhost:3000/users
 Migrate the test database:
 
 ```bash
-cargo run --bin db migrate --test
+cargo run --bin db migrate -e test
 ```
 
 Then run the tests:
