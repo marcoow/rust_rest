@@ -47,22 +47,22 @@ cargo run
 
 ### Making requests with `curl`
 
-#### Creating a new user
+#### Creating a new task
 
 ```bash
-curl -X POST localhost:3000/users -H 'Authorization: Bearer secr3t!' -H 'Content-Type: application/json' -d '{"name": "<name>"}'
+curl -X POST localhost:3000/task -H 'Authorization: Bearer secr3t!' -H 'Content-Type: application/json' -d '{"description": "do something"}'
 ```
 
-#### Loading a single user
+#### Loading a single task
 
 ```bash
-curl localhost:3000/users/<id>
+curl localhost:3000/tasks/<id>
 ```
 
-#### Loading all users
+#### Loading all tasks
 
 ```bash
-curl localhost:3000/users
+curl localhost:3000/tasks
 ```
 
 ### Running the test
