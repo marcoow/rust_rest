@@ -1,4 +1,4 @@
-use crate::controllers::users::{create_user, get_user, get_users};
+use crate::controllers::tasks::{create_task, get_task, get_tasks};
 use crate::state::AppState;
 use axum::{
     routing::{get, post},
@@ -8,8 +8,8 @@ use tower_http::validate_request::ValidateRequestHeaderLayer;
 
 pub fn routes() -> Router<AppState> {
     Router::new()
-        .route("/users", post(create_user))
+        .route("/tasks", post(create_task))
         .route_layer(ValidateRequestHeaderLayer::bearer("secr3t!"))
-        .route("/users", get(get_users))
-        .route("/users/:id", get(get_user))
+        .route("/tasks", get(get_tasks))
+        .route("/tasks/:id", get(get_task))
 }

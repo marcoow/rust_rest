@@ -6,87 +6,87 @@ use validator::Validate;
 
 #[derive(Serialize, Debug)]
 #[cfg_attr(test, derive(Deserialize))]
-pub struct User {
+pub struct Task {
     id: i32,
-    name: String,
+    description: String,
 }
 
-pub async fn get_users(
+pub async fn get_tasks(
     State(state): State<AppState>,
-) -> Result<Json<Vec<User>>, (StatusCode, String)> {
+) -> Result<Json<Vec<Task>>, (StatusCode, String)> {
     let conn = state.db_pool.get().await.map_err(internal_error)?;
 
     let rows = conn
-        .query("select id, name from users", &[])
+        .query("select id, description from tasks", &[])
         .await
         .map_err(internal_error)?;
 
-    let users = rows
+    let tasks = rows
         .iter()
-        .map(|row| User {
+        .map(|row| Task {
             id: row.get(0),
-            name: row.get(1),
+            description: row.get(1),
         })
         .collect();
 
-    info!("responding with {:?}", users);
+    info!("responding with {:?}", tasks);
 
-    Ok(Json(users))
+    Ok(Json(tasks))
 }
 
-pub async fn get_user(
+pub async fn get_task(
     State(state): State<AppState>,
     Path(id): Path<i32>,
-) -> Result<Json<User>, (StatusCode, String)> {
+) -> Result<Json<Task>, (StatusCode, String)> {
     let conn = state.db_pool.get().await.map_err(internal_error)?;
 
     if let Ok(row) = conn
-        .query_one("select id, name from users where id = $1", &[&id])
+        .query_one("select id, description from tasks where id = $1", &[&id])
         .await
     {
-        let user = User {
+        let task = Task {
             id: row.get(0),
-            name: row.get(1),
+            description: row.get(1),
         };
 
-        info!("responding with {:?}", user);
+        info!("responding with {:?}", task);
 
-        Ok(Json(user))
+        Ok(Json(task))
     } else {
-        info!("no user found for id {}", id);
+        info!("no task found for id {}", id);
 
         Err((StatusCode::NOT_FOUND, "".to_string()))
     }
 }
 
 #[derive(Deserialize, Validate)]
-pub struct CreateUser {
+pub struct CreateTask {
     #[validate(length(min = 1))]
-    name: String,
+    description: String,
 }
 
-pub async fn create_user(
+pub async fn create_task(
     State(state): State<AppState>,
-    Json(payload): Json<CreateUser>,
-) -> Result<Json<User>, (StatusCode, String)> {
+    Json(payload): Json<CreateTask>,
+) -> Result<Json<Task>, (StatusCode, String)> {
     match payload.validate() {
         Ok(_) => {
-            let name = payload.name;
+            let description = payload.description;
 
             let conn = state.db_pool.get().await.map_err(internal_error)?;
             let rows = conn
                 .query(
-                    "insert into users (name) values ($1) returning id",
-                    &[&name],
+                    "insert into tasks (description) values ($1) returning id",
+                    &[&description],
                 )
                 .await
                 .map_err(internal_error)?;
 
             let id = rows[0].get(0);
 
-            let user = User { id, name };
+            let task = Task { id, description };
 
-            Ok(Json(user))
+            Ok(Json(task))
         }
         Err(err) => Err((StatusCode::UNPROCESSABLE_ENTITY, err.to_string())),
     }
@@ -99,28 +99,28 @@ mod tests {
     use axum::body::Body;
     use std::collections::HashMap;
 
-    type UsersList = Vec<User>;
+    type TasksList = Vec<Task>;
 
     #[tokio::test]
-    async fn test_get_users() {
+    async fn test_get_tasks() {
         let (app, db) = setup().await;
 
         let conn = db.get().await.unwrap();
 
         conn.query(
-            "insert into users (name) values ($1) returning id",
-            &[&"Test User"],
+            "insert into tasks (description) values ($1) returning id",
+            &[&"Test Task"],
         )
         .await
         .unwrap();
 
-        let response = request(app, "/users", HashMap::new(), Body::empty()).await;
+        let response = request(app, "/tasks", HashMap::new(), Body::empty()).await;
 
         assert_eq!(response.status(), StatusCode::OK);
 
         let body = hyper::body::to_bytes(response.into_body()).await.unwrap();
-        let users: UsersList = serde_json::from_slice::<Vec<User>>(&body).unwrap();
-        assert_eq!(users.len(), 1);
-        assert_eq!(users.get(0).unwrap().name, "Test User");
+        let tasks: TasksList = serde_json::from_slice::<TasksList>(&body).unwrap();
+        assert_eq!(tasks.len(), 1);
+        assert_eq!(tasks.get(0).unwrap().description, "Test Task");
     }
 }
