@@ -50,7 +50,7 @@ cargo run
 #### Creating a new user
 
 ```bash
-curl -X POST localhost:3000/users -H 'Content-Type: application/json' -d '{"name": "<name>"}'
+curl -X POST localhost:3000/users -H 'Authorization: Bearer secr3t!' -H 'Content-Type: application/json' -d '{"name": "<name>"}'
 ```
 
 #### Loading a single user
