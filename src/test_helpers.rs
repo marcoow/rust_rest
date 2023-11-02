@@ -128,7 +128,7 @@ pub async fn setup() -> (Router, ConnectionPool) {
     let manager = PostgresConnectionManager::new(test_db_config, NoTls);
     let pool = Pool::builder().build(manager).await.unwrap();
 
-    let app = routes().with_state(AppState {
+    let app = routes(AppState {
         db_pool: pool.clone(),
     });
 
