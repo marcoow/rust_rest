@@ -4,6 +4,7 @@ use tracing::{debug, Level};
 use tracing_subscriber::FmtSubscriber;
 
 mod controllers;
+mod middlewares;
 mod routes;
 mod state;
 
