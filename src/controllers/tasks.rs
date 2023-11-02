@@ -60,6 +60,7 @@ pub async fn get_task(
 }
 
 #[derive(Deserialize, Validate)]
+#[cfg_attr(test, derive(Serialize))]
 pub struct CreateTask {
     #[validate(length(min = 1))]
     description: String,
@@ -96,7 +97,11 @@ pub async fn create_task(
 mod tests {
     use super::*;
     use crate::test_helpers::{request, setup};
-    use axum::body::Body;
+    use axum::{
+        body::Body,
+        http::{self, Method},
+    };
+    use serde_json::json;
     use std::collections::HashMap;
 
     type TasksList = Vec<Task>;
@@ -107,14 +112,14 @@ mod tests {
 
         let conn = db.get().await.unwrap();
 
-        conn.execute(
-            "insert into tasks (description) values ($1)",
+        conn.query(
+            "insert into tasks (description) values ($1) returning id",
             &[&"Test Task"],
         )
         .await
         .unwrap();
 
-        let response = request(app, "/tasks", HashMap::new(), Body::empty()).await;
+        let response = request(app, "/tasks", HashMap::new(), Body::empty(), Method::GET).await;
 
         assert_eq!(response.status(), StatusCode::OK);
 
@@ -122,6 +127,44 @@ mod tests {
         let tasks: TasksList = serde_json::from_slice::<TasksList>(&body).unwrap();
         assert_eq!(tasks.len(), 1);
         assert_eq!(tasks.get(0).unwrap().description, "Test Task");
+    }
+
+    #[tokio::test]
+    async fn test_create_tasks_unauthorized() {
+        let (app, _db) = setup().await;
+
+        let mut headers = HashMap::new();
+        headers.insert(http::header::CONTENT_TYPE.as_str(), "application/json");
+
+        let response = request(app, "/tasks", headers, Body::empty(), Method::POST).await;
+
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+    }
+
+    #[tokio::test]
+    async fn test_create_tasks_authorized() {
+        let (app, _db) = setup().await;
+
+        let mut headers = HashMap::new();
+        headers.insert(http::header::CONTENT_TYPE.as_str(), "application/json");
+        headers.insert(http::header::AUTHORIZATION.as_str(), "9974812642a36dbee625fa06b2463dbff832e17dcce3836dbb128d1db93aeac4e16def5612ee2555bd333c77d65094a470e2");
+
+        let payload = json!(CreateTask {
+            description: String::from("my task")
+        });
+
+        let response = request(
+            app,
+            "/tasks",
+            headers,
+            Body::from(payload.to_string()),
+            Method::POST,
+        )
+        .await;
+
+        let body = hyper::body::to_bytes(response.into_body()).await.unwrap();
+        let task: Task = serde_json::from_slice::<Task>(&body).unwrap();
+        assert_eq!(task.description, "my task");
     }
 
     #[tokio::test]
@@ -144,6 +187,7 @@ mod tests {
             format!("/tasks/{}", task_id).as_str(),
             HashMap::new(),
             Body::empty(),
+            Method::GET,
         )
         .await;
 
