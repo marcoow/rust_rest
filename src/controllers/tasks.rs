@@ -96,7 +96,7 @@ pub async fn create_task(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_helpers::{request, setup};
+    use crate::test_helpers::{request, setup, TestSetup};
     use axum::{
         body::Body,
         http::{self, Method},
@@ -108,7 +108,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_tasks() {
-        let (app, db) = setup().await;
+        let TestSetup { app, pool: db } = setup().await;
 
         let conn = db.get().await.unwrap();
 
@@ -131,7 +131,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_tasks_unauthorized() {
-        let (app, _db) = setup().await;
+        let TestSetup { app, pool: _ } = setup().await;
 
         let mut headers = HashMap::new();
         headers.insert(http::header::CONTENT_TYPE.as_str(), "application/json");
@@ -143,7 +143,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_tasks_authorized() {
-        let (app, db) = setup().await;
+        let TestSetup { app, pool: db } = setup().await;
 
         let conn = db.get().await.unwrap();
 
@@ -178,7 +178,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_task() {
-        let (app, db) = setup().await;
+        let TestSetup { app, pool: db } = setup().await;
 
         let conn = db.get().await.unwrap();
 

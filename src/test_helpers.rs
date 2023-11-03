@@ -17,6 +17,11 @@ use std::env;
 use tokio_postgres::{config::Config, NoTls};
 use tower::ServiceExt;
 
+pub struct TestSetup {
+    pub app: Router,
+    pub pool: ConnectionPool,
+}
+
 async fn prepare_db() -> Config {
     dotenvy::from_filename(".env.test").ok();
     let db_url = env::var("DATABASE_URL").expect("No DATABASE_URL set – cannot run tests!");
@@ -53,7 +58,7 @@ async fn prepare_db() -> Config {
     test_db_config
 }
 
-pub async fn setup() -> (Router, ConnectionPool) {
+pub async fn setup() -> TestSetup {
     let test_db_config = prepare_db().await;
     let manager = PostgresConnectionManager::new(test_db_config, NoTls);
     let pool = Pool::builder().build(manager).await.unwrap();
@@ -62,7 +67,7 @@ pub async fn setup() -> (Router, ConnectionPool) {
         db_pool: pool.clone(),
     });
 
-    (app, pool)
+    TestSetup { app, pool }
 }
 
 pub async fn request(
