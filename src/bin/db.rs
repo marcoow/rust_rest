@@ -32,6 +32,11 @@ fn cli() -> Command {
                 .arg(arg!(env: -e <ENV>).value_parser(value_parser!(String))),
         )
         .subcommand(
+            Command::new("reset")
+                .about("Reset the database (drop, re-create, migrate)")
+                .arg(arg!(env: -e <ENV>).value_parser(value_parser!(String))),
+        )
+        .subcommand(
             Command::new("seed")
                 .about("Seed the database")
                 .arg(arg!(env: -e <ENV>).value_parser(value_parser!(String))),
@@ -60,6 +65,11 @@ async fn main() {
             create(sub_matches).await;
         }
         Some(("migrate", sub_matches)) => {
+            migrate(sub_matches).await;
+        }
+        Some(("reset", sub_matches)) => {
+            drop(sub_matches).await;
+            create(sub_matches).await;
             migrate(sub_matches).await;
         }
         Some(("seed", sub_matches)) => {
