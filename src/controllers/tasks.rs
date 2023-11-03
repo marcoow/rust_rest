@@ -74,15 +74,15 @@ pub async fn create_task(
             let description = payload.description;
 
             let conn = state.db_pool.get().await.map_err(internal_error)?;
-            let rows = conn
-                .query(
+            let row = conn
+                .query_one(
                     "insert into tasks (description) values ($1) returning id",
                     &[&description],
                 )
                 .await
                 .map_err(internal_error)?;
 
-            let id = rows[0].get(0);
+            let id = row.get(0);
 
             let task = Task { id, description };
 
@@ -107,8 +107,8 @@ mod tests {
 
         let conn = db.get().await.unwrap();
 
-        conn.query(
-            "insert into tasks (description) values ($1) returning id",
+        conn.execute(
+            "insert into tasks (description) values ($1)",
             &[&"Test Task"],
         )
         .await
