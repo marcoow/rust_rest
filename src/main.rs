@@ -4,6 +4,7 @@ use tracing::{debug, Level};
 use tracing_subscriber::FmtSubscriber;
 
 mod controllers;
+mod middlewares;
 mod routes;
 mod state;
 
@@ -19,7 +20,7 @@ async fn main() {
     tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
 
     let app_state = state::app_state().await;
-    let app = routes::routes().with_state(app_state);
+    let app = routes::routes(app_state);
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
     debug!("listening on {}", addr);

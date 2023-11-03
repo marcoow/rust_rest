@@ -50,7 +50,7 @@ cargo run
 #### Creating a new task
 
 ```bash
-curl -X POST localhost:3000/task -H 'Authorization: Bearer secr3t!' -H 'Content-Type: application/json' -d '{"description": "do something"}'
+curl -X POST localhost:3000/tasks -H 'Authorization: 9974812642a36dbee625fa06b2463dbff832e17dcce3836dbb128d1db93aeac4e16def5612ee2555bd333c77d65094a470e2' -H 'Content-Type: application/json' -d '{"description": "do something"}'
 ```
 
 #### Loading a single task

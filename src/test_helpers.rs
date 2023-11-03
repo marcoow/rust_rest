@@ -1,7 +1,12 @@
 use crate::routes::routes;
 use crate::state::AppState;
 use crate::state::ConnectionPool;
-use axum::{body::Body, http::Request, response::Response, Router};
+use axum::{
+    body::Body,
+    http::{Method, Request},
+    response::Response,
+    Router,
+};
 use bb8::Pool;
 use bb8_postgres::PostgresConnectionManager;
 use core::str::FromStr;
@@ -128,19 +133,27 @@ pub async fn setup() -> (Router, ConnectionPool) {
     let manager = PostgresConnectionManager::new(test_db_config, NoTls);
     let pool = Pool::builder().build(manager).await.unwrap();
 
-    let app = routes().with_state(AppState {
+    let app = routes(AppState {
         db_pool: pool.clone(),
     });
 
     (app, pool)
 }
 
-pub async fn request(app: Router, uri: &str, headers: HashMap<&str, &str>, body: Body) -> Response {
+pub async fn request(
+    app: Router,
+    uri: &str,
+    headers: HashMap<&str, &str>,
+    body: Body,
+    method: Method,
+) -> Response {
     let mut request_builder = Request::builder().uri(uri);
 
     for (key, value) in headers {
         request_builder = request_builder.header(key, value);
     }
+
+    request_builder = request_builder.method(method);
 
     let request = request_builder.body(body);
 
