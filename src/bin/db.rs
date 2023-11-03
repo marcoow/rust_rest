@@ -1,7 +1,8 @@
 use clap::{arg, value_parser, Command};
+use core::str::FromStr;
 use std::env;
 use std::fs;
-use tokio_postgres::NoTls;
+use tokio_postgres::{config::Config, NoTls};
 use tracing::{error, Level};
 use tracing_subscriber::FmtSubscriber;
 
@@ -15,6 +16,11 @@ fn cli() -> Command {
         .about("A CLI tool to manage the project's database.")
         .subcommand_required(true)
         .arg_required_else_help(true)
+        .subcommand(
+            Command::new("create")
+                .about("Create the database")
+                .arg(arg!(env: -e <ENV>).value_parser(value_parser!(String))),
+        )
         .subcommand(
             Command::new("migrate")
                 .about("Migrate the database")
@@ -42,6 +48,43 @@ async fn main() {
     let matches = cli().get_matches();
 
     match matches.subcommand() {
+        Some(("create", sub_matches)) => {
+            let env = sub_matches
+                .get_one::<String>("env")
+                .map(|s| s.as_str())
+                .unwrap_or("development");
+        
+            if env == "test" {
+                println!("ℹ️ Creating test database…");
+                read_dotenv_config(".env.test");
+            } else {
+                println!("ℹ️ Creating development database…");
+                read_dotenv_config(".env");
+            }
+        
+            let db_url = env::var("DATABASE_URL").unwrap();
+            let db_config = Config::from_str(&db_url).unwrap();
+            let db_name = db_config.get_dbname().unwrap();
+            let mut root_db_config = db_config.clone();
+            root_db_config.dbname("postgres");
+
+            let (client, connection) = root_db_config.connect(NoTls)
+                .await
+                .unwrap();
+        
+            tokio::spawn(async move {
+                if let Err(e) = connection.await {
+                    error!("An error occured while connecting to database: {}", e);
+                }
+            });
+        
+            let result = client.execute(&format!("create database {}", &db_name), &[]).await;
+        
+            match result {
+                Ok(_) => println!("✅ Database {} created successfully.", &db_name),
+                Err(_) => println!("❌ Creating database {} failed!", &db_name),
+            }
+        }
         Some(("migrate", sub_matches)) => {
             let env = sub_matches
                 .get_one::<String>("env")
