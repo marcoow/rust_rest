@@ -32,11 +32,12 @@ You can also change the connection string and connect to a different
 DATABASE_URL="postgresql://<user>:<password>@<host>/<database>"
 ```
 
-Once the database is running, it needs to be migrated so that the required
-tables get created etc.:
+Once the database is running, it needs to be migrated and seeded so that the
+required tables get created and data gets inserted:
 
 ```bash
 cargo db migrate
+cargo db seed
 ```
 
 ### Running the server

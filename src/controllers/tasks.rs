@@ -143,11 +143,20 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_tasks_authorized() {
-        let (app, _db) = setup().await;
+        let (app, db) = setup().await;
+
+        let conn = db.get().await.unwrap();
+
+        conn.execute(
+            "insert into users (name, token) values ($1, $2)",
+            &[&"Test User", &"s3kuR t0k3n!"],
+        )
+        .await
+        .unwrap();
 
         let mut headers = HashMap::new();
         headers.insert(http::header::CONTENT_TYPE.as_str(), "application/json");
-        headers.insert(http::header::AUTHORIZATION.as_str(), "9974812642a36dbee625fa06b2463dbff832e17dcce3836dbb128d1db93aeac4e16def5612ee2555bd333c77d65094a470e2");
+        headers.insert(http::header::AUTHORIZATION.as_str(), "s3kuR t0k3n!");
 
         let payload = json!(CreateTask {
             description: String::from("my task")
