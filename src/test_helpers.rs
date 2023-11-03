@@ -17,9 +17,45 @@ use std::env;
 use tokio_postgres::{config::Config, NoTls};
 use tower::ServiceExt;
 
+struct DBCleanup {
+    db_config: Config,
+}
+
 pub struct TestSetup {
     pub app: Router,
     pub pool: ConnectionPool,
+    #[allow(dead_code)]
+    cleanup: DBCleanup,
+}
+
+impl Drop for DBCleanup {
+    fn drop(&mut self) {
+        async fn drop_db(db_config: Config) {
+            let db_name = db_config.get_dbname().unwrap();
+            println!("cleaning up DB, {}", &db_name);
+            let mut root_db_config = db_config.clone();
+            root_db_config.dbname("postgres");
+            let (client, connection) = root_db_config.connect(NoTls).await.unwrap();
+            println!("we got past the await!");
+            if let Err(e) = connection.await {
+                println!("e: {:?}!", e);
+                eprintln!("connection error: {}", e);
+            }
+            println!("we connection1!");
+
+            let result = client
+                .execute(&format!("drop database if exists {}", &db_name), &[])
+                .await;
+
+            match result {
+                Ok(_) => println!("Dropped!"),
+                Err(e) => println!("❌ Dropping database {} failed: {:?}!", &db_name, e),
+            }
+        }
+
+        let db_config = self.db_config.clone();
+        tokio::runtime::Handle::current().block_on(async { drop_db(db_config).await });
+    }
 }
 
 async fn prepare_db() -> Config {
@@ -60,14 +96,20 @@ async fn prepare_db() -> Config {
 
 pub async fn setup() -> TestSetup {
     let test_db_config = prepare_db().await;
-    let manager = PostgresConnectionManager::new(test_db_config, NoTls);
+    let manager = PostgresConnectionManager::new(test_db_config.clone(), NoTls);
     let pool = Pool::builder().build(manager).await.unwrap();
 
     let app = routes(AppState {
         db_pool: pool.clone(),
     });
 
-    TestSetup { app, pool }
+    TestSetup {
+        app,
+        pool,
+        cleanup: DBCleanup {
+            db_config: test_db_config,
+        },
+    }
 }
 
 pub async fn request(

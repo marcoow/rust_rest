@@ -108,7 +108,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_tasks() {
-        let TestSetup { app, pool: db } = setup().await;
+        let TestSetup { app, pool: db, .. } = setup().await;
 
         let conn = db.get().await.unwrap();
 
@@ -131,7 +131,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_tasks_unauthorized() {
-        let TestSetup { app, pool: _ } = setup().await;
+        let TestSetup { app, .. } = setup().await;
 
         let mut headers = HashMap::new();
         headers.insert(http::header::CONTENT_TYPE.as_str(), "application/json");
@@ -143,7 +143,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_tasks_authorized() {
-        let TestSetup { app, pool: db } = setup().await;
+        let TestSetup { app, pool: db, .. } = setup().await;
 
         let conn = db.get().await.unwrap();
 
@@ -178,7 +178,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_task() {
-        let TestSetup { app, pool: db } = setup().await;
+        let TestSetup { app, pool: db, .. } = setup().await;
 
         let conn = db.get().await.unwrap();
 
