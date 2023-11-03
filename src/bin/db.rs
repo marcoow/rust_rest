@@ -6,7 +6,7 @@ use tracing_subscriber::FmtSubscriber;
 
 mod embedded {
     use refinery::embed_migrations;
-    embed_migrations!("./migrations");
+    embed_migrations!("./db/migrations");
 }
 
 fn cli() -> Command {
