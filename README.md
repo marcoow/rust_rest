@@ -36,7 +36,7 @@ Once the database is running, it needs to be migrated so that the required
 tables get created etc.:
 
 ```bash
-cargo run --bin db migrate
+cargo db migrate
 ```
 
 ### Running the server
@@ -70,7 +70,7 @@ curl localhost:3000/tasks
 Migrate the test database:
 
 ```bash
-cargo run --bin db migrate -e test
+cargo db migrate -e test
 ```
 
 Then run the tests:
