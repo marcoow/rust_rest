@@ -87,7 +87,7 @@ async fn prepare_db() -> Config {
         })
         .await;
 
-    let mut config = Config::from_str(&db_url).unwrap();
+    let config = Config::from_str(&db_url).unwrap();
     let test_db_suffix: String = thread_rng()
         .sample_iter(&Alphanumeric)
         .take(30)
@@ -96,9 +96,8 @@ async fn prepare_db() -> Config {
     let test_db_name =
         format!("{}_{}", config.get_dbname().unwrap(), test_db_suffix).to_lowercase();
 
-    config.dbname("postgres");
 
-    let (client, connection) = tokio_postgres::connect(&db_url, NoTls).await.unwrap();
+    let (client, connection) = config.connect(NoTls).await.unwrap();
     tokio::spawn(async move {
         if let Err(e) = connection.await {
             eprintln!("connection error: {}", e);
