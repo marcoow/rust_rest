@@ -108,7 +108,7 @@ mod tests {
         let conn = db.get().await.unwrap();
 
         conn.execute(
-            "insert into tasks (description) values ($1) returning id",
+            "insert into tasks (description) values ($1)",
             &[&"Test Task"],
         )
         .await
