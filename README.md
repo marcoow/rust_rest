@@ -40,6 +40,17 @@ cargo db migrate
 cargo db seed
 ```
 
+The Docker setup already comes with pre-configured databases for development
+and testing but they can also be dropped, created, and reset (drop, re-create,
+migrate) via the command line if necessary (e.g. when switching between
+branches with different database schemes):
+
+```bash
+cargo db drop
+cargo db create
+cargo db reset
+```
+
 ### Running the server
 
 ```bash
