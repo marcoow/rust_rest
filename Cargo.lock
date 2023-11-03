@@ -1127,7 +1127,6 @@ dependencies = [
  "clap",
  "dotenvy",
  "hyper",
- "once_cell",
  "rand",
  "refinery",
  "serde",
