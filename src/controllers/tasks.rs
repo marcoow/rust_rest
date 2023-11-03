@@ -123,4 +123,35 @@ mod tests {
         assert_eq!(tasks.len(), 1);
         assert_eq!(tasks.get(0).unwrap().description, "Test Task");
     }
+
+    #[tokio::test]
+    async fn test_get_task() {
+        let (app, db) = setup().await;
+
+        let conn = db.get().await.unwrap();
+
+        let rows = conn
+            .query(
+                "insert into tasks (description) values ($1) returning id",
+                &[&"Test Task"],
+            )
+            .await
+            .unwrap();
+        let task_id: i32 = rows[0].get(0);
+
+        let response = request(
+            app,
+            format!("/tasks/{}", task_id).as_str(),
+            HashMap::new(),
+            Body::empty(),
+        )
+        .await;
+
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = hyper::body::to_bytes(response.into_body()).await.unwrap();
+        let task: Task = serde_json::from_slice::<Task>(&body).unwrap();
+        assert_eq!(task.id, task_id);
+        assert_eq!(task.description, "Test Task");
+    }
 }

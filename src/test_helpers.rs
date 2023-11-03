@@ -9,8 +9,12 @@ use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
 use std::collections::HashMap;
 use std::env;
+use tokio_postgres::error::SqlState;
 use tokio_postgres::{config::Config, NoTls};
 use tower::ServiceExt;
+
+static DATABASE_TEMPLATE: tokio::sync::OnceCell<()> = tokio::sync::OnceCell::const_new();
+static DATABASE_TEMPLATE_NAME: &str = "__test_template__";
 
 async fn prepare_db() -> Config {
     dotenvy::from_filename(".env.test").ok();
@@ -18,7 +22,77 @@ async fn prepare_db() -> Config {
     let config = Config::from_str(&db_url).unwrap();
     let db_name = config.get_dbname().unwrap();
 
-    let (client, connection) = tokio_postgres::connect(&db_url, NoTls).await.unwrap();
+    DATABASE_TEMPLATE
+        .get_or_init(|| {
+            let db_url = db_url.clone();
+            async move {
+                // Create DB template
+                {
+                    let config = Config::from_str(&db_url).unwrap();
+                    let (client, connection) = config.connect(NoTls).await.unwrap();
+                    tokio::spawn(async move {
+                        if let Err(e) = connection.await {
+                            eprintln!("connection error: {}", e);
+                        }
+                    });
+
+                    if let Err(e) = client
+                        .execute(
+                            &format!(
+                                "create database {} template {}",
+                                DATABASE_TEMPLATE_NAME, db_name
+                            ),
+                            &[],
+                        )
+                        .await
+                    {
+                        if Some(&SqlState::DUPLICATE_DATABASE) != e.code() {
+                            client
+                                .execute(
+                                    &format!(
+                                        "alter database {} with is_template FALSE",
+                                        DATABASE_TEMPLATE_NAME
+                                    ),
+                                    &[],
+                                )
+                                .await
+                                .unwrap();
+                            client
+                                .execute(
+                                    &format!("drop database if exists {}", DATABASE_TEMPLATE_NAME),
+                                    &[],
+                                )
+                                .await
+                                .unwrap();
+                            client
+                                .execute(
+                                    &format!(
+                                        "create database {} template {}",
+                                        DATABASE_TEMPLATE_NAME, db_name
+                                    ),
+                                    &[],
+                                )
+                                .await
+                                .unwrap();
+                        }
+                    }
+
+                    client
+                        .execute(
+                            &format!(
+                                "alter database {} with is_template TRUE",
+                                DATABASE_TEMPLATE_NAME
+                            ),
+                            &[],
+                        )
+                        .await
+                        .unwrap();
+                }
+            }
+        })
+        .await;
+
+    let (client, connection) = config.connect(NoTls).await.unwrap();
     tokio::spawn(async move {
         if let Err(e) = connection.await {
             eprintln!("connection error: {}", e);
@@ -31,9 +105,13 @@ async fn prepare_db() -> Config {
         .map(char::from)
         .collect();
     let test_db_name = format!("{}_{}", db_name, test_db_suffix).to_lowercase();
+
     client
         .execute(
-            &format!("create database {} template {}", test_db_name, db_name),
+            &format!(
+                "create database {} template {}",
+                test_db_name, DATABASE_TEMPLATE_NAME
+            ),
             &[],
         )
         .await
