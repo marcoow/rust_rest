@@ -96,21 +96,20 @@ pub async fn create_task(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_helpers::{request, setup, TestSetup};
+    use crate::test_helpers::{request, setup, teardown, TestSetup};
     use axum::{
         body::Body,
         http::{self, Method},
     };
     use serde_json::json;
     use std::collections::HashMap;
+    use test_macro::test;
 
     type TasksList = Vec<Task>;
 
-    #[tokio::test]
-    async fn test_get_tasks() {
-        let TestSetup { app, pool: db, .. } = setup().await;
-
-        let conn = db.get().await.unwrap();
+    #[test]
+    async fn test_get_tasks(context: &TestSetup) {
+        let conn = context.pool.get().await.unwrap();
 
         conn.query(
             "insert into tasks (description) values ($1) returning id",
@@ -119,7 +118,7 @@ mod tests {
         .await
         .unwrap();
 
-        let response = request(app, "/tasks", HashMap::new(), Body::empty(), Method::GET).await;
+        let response = request(&context.app, "/tasks", HashMap::new(), Body::empty(), Method::GET).await;
 
         assert_eq!(response.status(), StatusCode::OK);
 
@@ -129,23 +128,19 @@ mod tests {
         assert_eq!(tasks.get(0).unwrap().description, "Test Task");
     }
 
-    #[tokio::test]
-    async fn test_create_tasks_unauthorized() {
-        let TestSetup { app, .. } = setup().await;
-
+    #[test]
+    async fn test_create_tasks_unauthorized(context: &TestSetup) {
         let mut headers = HashMap::new();
         headers.insert(http::header::CONTENT_TYPE.as_str(), "application/json");
 
-        let response = request(app, "/tasks", headers, Body::empty(), Method::POST).await;
+        let response = request(&context.app, "/tasks", headers, Body::empty(), Method::POST).await;
 
         assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
     }
 
-    #[tokio::test]
-    async fn test_create_tasks_authorized() {
-        let TestSetup { app, pool: db, .. } = setup().await;
-
-        let conn = db.get().await.unwrap();
+    #[test]
+    async fn test_create_tasks_authorized(context: &TestSetup) {
+        let conn = context.pool.get().await.unwrap();
 
         conn.execute(
             "insert into users (name, token) values ($1, $2)",
@@ -163,7 +158,7 @@ mod tests {
         });
 
         let response = request(
-            app,
+            &context.app,
             "/tasks",
             headers,
             Body::from(payload.to_string()),
@@ -176,11 +171,9 @@ mod tests {
         assert_eq!(task.description, "my task");
     }
 
-    #[tokio::test]
-    async fn test_get_task() {
-        let TestSetup { app, pool: db, .. } = setup().await;
-
-        let conn = db.get().await.unwrap();
+    #[test]
+    async fn test_get_task(context: &TestSetup) {
+        let conn = context.pool.get().await.unwrap();
 
         let rows = conn
             .query(
@@ -192,7 +185,7 @@ mod tests {
         let task_id: i32 = rows[0].get(0);
 
         let response = request(
-            app,
+            &context.app,
             format!("/tasks/{}", task_id).as_str(),
             HashMap::new(),
             Body::empty(),
