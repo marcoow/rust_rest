@@ -2,7 +2,7 @@ use clap::{arg, value_parser, ArgMatches, Command};
 use core::str::FromStr;
 use std::env;
 use std::fs;
-use tokio_postgres::{config::Config, NoTls};
+use tokio_postgres::{config::Config, Client, NoTls};
 use tracing::{error, Level};
 use tracing_subscriber::FmtSubscriber;
 
@@ -88,20 +88,11 @@ async fn drop(sub_matches: &ArgMatches) {
         Environment::Test => println!("ℹ️ Dropping test database…"),
     }
 
-    let db_config = get_db_config(env);
+    let db_config = get_db_config(&env);
     let db_name = db_config.get_dbname().unwrap();
-    let mut root_db_config = db_config.clone();
-    root_db_config.dbname("postgres");
+    let root_db_client = get_root_db_client(&env).await;
 
-    let (client, connection) = root_db_config.connect(NoTls).await.unwrap();
-
-    tokio::spawn(async move {
-        if let Err(e) = connection.await {
-            error!("An error occured while connecting to database: {}", e);
-        }
-    });
-
-    let result = client
+    let result = root_db_client
         .execute(&format!("drop database if exists {}", &db_name), &[])
         .await;
 
@@ -119,20 +110,11 @@ async fn create(sub_matches: &ArgMatches) {
         Environment::Test => println!("ℹ️ Creating test database…"),
     }
 
-    let db_config = get_db_config(env);
+    let db_config = get_db_config(&env);
     let db_name = db_config.get_dbname().unwrap();
-    let mut root_db_config = db_config.clone();
-    root_db_config.dbname("postgres");
+    let root_db_client = get_root_db_client(&env).await;
 
-    let (client, connection) = root_db_config.connect(NoTls).await.unwrap();
-
-    tokio::spawn(async move {
-        if let Err(e) = connection.await {
-            error!("An error occured while connecting to database: {}", e);
-        }
-    });
-
-    let result = client
+    let result = root_db_client
         .execute(&format!("create database {}", &db_name), &[])
         .await;
 
@@ -150,15 +132,7 @@ async fn migrate(sub_matches: &ArgMatches) {
         Environment::Test => println!("ℹ️ Migrating test database…"),
     }
 
-    let db_config = get_db_config(env);
-
-    let (mut client, connection) = db_config.connect(NoTls).await.unwrap();
-
-    tokio::spawn(async move {
-        if let Err(e) = connection.await {
-            error!("An error occured while connecting to database: {}", e);
-        }
-    });
+    let mut client = get_db_client(&env).await;
 
     let report = embedded::migrations::runner()
         .run_async(&mut client)
@@ -176,15 +150,7 @@ async fn migrate(sub_matches: &ArgMatches) {
 async fn seed() {
     println!("ℹ️ Seeding development database…");
 
-    let db_config = get_db_config(Environment::Development);
-
-    let (mut client, connection) = db_config.connect(NoTls).await.unwrap();
-
-    tokio::spawn(async move {
-        if let Err(e) = connection.await {
-            error!("An error occured while connecting to database: {}", e);
-        }
-    });
+    let mut client = get_db_client(&Environment::Development).await;
 
     let statements = fs::read_to_string("./db/seeds.sql")
         .expect("Could not read seeds – make sure db/seeds.sql exists!");
@@ -216,7 +182,7 @@ fn choose_env(sub_matches: &ArgMatches) -> Environment {
     }
 }
 
-fn get_db_config(env: Environment) -> Config {
+fn get_db_config(env: &Environment) -> Config {
     match env {
         Environment::Test => read_dotenv_config(".env.test"),
         Environment::Development => read_dotenv_config(".env"),
@@ -224,4 +190,32 @@ fn get_db_config(env: Environment) -> Config {
 
     let db_url = env::var("DATABASE_URL").unwrap();
     Config::from_str(&db_url).unwrap()
+}
+
+async fn get_db_client(env: &Environment) -> Client {
+    let db_config = get_db_config(env);
+    let (client, connection) = db_config.connect(NoTls).await.unwrap();
+
+    tokio::spawn(async move {
+        if let Err(e) = connection.await {
+            error!("An error occured while connecting to database: {}", e);
+        }
+    });
+
+    client
+}
+
+async fn get_root_db_client(env: &Environment) -> Client {
+    let db_config = get_db_config(env);
+    let mut root_db_config = db_config.clone();
+    root_db_config.dbname("postgres");
+    let (client, connection) = root_db_config.connect(NoTls).await.unwrap();
+
+    tokio::spawn(async move {
+        if let Err(e) = connection.await {
+            error!("An error occured while connecting to database: {}", e);
+        }
+    });
+
+    client
 }
