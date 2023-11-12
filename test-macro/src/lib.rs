@@ -8,7 +8,10 @@ pub fn test(_: TokenStream, item: TokenStream) -> TokenStream {
     let test_name = input.sig.ident.clone();
     let test_arguments = input.sig.inputs;
     let test_block = input.block;
-    let inner_test_name = syn::Ident::new(format!("inner_{}", test_name).as_str(), input.sig.ident.span());
+    let inner_test_name = syn::Ident::new(
+        format!("inner_{}", test_name).as_str(),
+        input.sig.ident.span(),
+    );
 
     let setup = quote! {
         let context = setup().await;
