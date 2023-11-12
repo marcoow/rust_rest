@@ -90,11 +90,11 @@ pub async fn teardown(context: TestSetup) {
         }
     });
     println!("we connection1!");
-    
+
     let result = client
         .execute(&format!("drop database if exists {}", &db_name), &[])
         .await;
-    
+
     match result {
         Ok(_) => println!("Dropped!"),
         Err(e) => println!("❌ Dropping database {} failed: {:?}!", &db_name, e),

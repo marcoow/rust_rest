@@ -118,7 +118,14 @@ mod tests {
         .await
         .unwrap();
 
-        let response = request(&context.app, "/tasks", HashMap::new(), Body::empty(), Method::GET).await;
+        let response = request(
+            &context.app,
+            "/tasks",
+            HashMap::new(),
+            Body::empty(),
+            Method::GET,
+        )
+        .await;
 
         assert_eq!(response.status(), StatusCode::OK);
 
