@@ -17,6 +17,12 @@ use std::env;
 use tokio_postgres::{config::Config, NoTls};
 use tower::ServiceExt;
 
+pub struct TestSetup {
+    pub app: Router,
+    pub pool: ConnectionPool,
+    db_config: Config,
+}
+
 async fn prepare_db() -> Config {
     dotenvy::from_filename(".env.test").ok();
     let db_url = env::var("DATABASE_URL").expect("No DATABASE_URL set – cannot run tests!");
@@ -53,20 +59,49 @@ async fn prepare_db() -> Config {
     test_db_config
 }
 
-pub async fn setup() -> (Router, ConnectionPool) {
+pub async fn setup() -> TestSetup {
     let test_db_config = prepare_db().await;
-    let manager = PostgresConnectionManager::new(test_db_config, NoTls);
+    let manager = PostgresConnectionManager::new(test_db_config.clone(), NoTls);
     let pool = Pool::builder().build(manager).await.unwrap();
 
     let app = routes(AppState {
         db_pool: pool.clone(),
     });
 
-    (app, pool)
+    TestSetup {
+        app,
+        pool,
+        db_config: test_db_config,
+    }
+}
+
+pub async fn teardown(context: TestSetup) {
+    drop(context.app);
+    drop(context.pool);
+    let db_name = context.db_config.get_dbname().unwrap();
+    println!("cleaning up DB, {}", &db_name);
+    let mut root_db_config = context.db_config.clone();
+    root_db_config.dbname("postgres");
+    let (client, connection) = root_db_config.connect(NoTls).await.unwrap();
+    tokio::spawn(async move {
+        if let Err(e) = connection.await {
+            eprintln!("connection error: {}", e);
+        }
+    });
+    println!("we connection1!");
+
+    let result = client
+        .execute(&format!("drop database if exists {}", &db_name), &[])
+        .await;
+
+    match result {
+        Ok(_) => println!("Dropped!"),
+        Err(e) => println!("❌ Dropping database {} failed: {:?}!", &db_name, e),
+    }
 }
 
 pub async fn request(
-    app: Router,
+    app: &Router,
     uri: &str,
     headers: HashMap<&str, &str>,
     body: Body,
@@ -82,5 +117,5 @@ pub async fn request(
 
     let request = request_builder.body(body);
 
-    app.oneshot(request.unwrap()).await.unwrap()
+    app.clone().oneshot(request.unwrap()).await.unwrap()
 }
