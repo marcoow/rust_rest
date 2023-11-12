@@ -92,7 +92,7 @@ jobs:
         components: clippy
 
     - name: migrate
-      run: cargo run --bin db migrate -e test
+      run: cargo db reset -e test
 
     - name: test
       run: cargo test
