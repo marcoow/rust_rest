@@ -20,7 +20,6 @@ use tower::ServiceExt;
 pub struct TestSetup {
     pub app: Router,
     pub pool: ConnectionPool,
-    #[allow(dead_code)]
     db_config: Config,
 }
 
