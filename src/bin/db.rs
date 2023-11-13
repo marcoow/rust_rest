@@ -2,6 +2,8 @@ use clap::{arg, value_parser, ArgMatches, Command};
 use core::str::FromStr;
 use std::env;
 use std::fs;
+use std::fs::File;
+use std::time::SystemTime;
 use tokio_postgres::{config::Config, Client, NoTls};
 use tracing::{error, Level};
 use tracing_subscriber::FmtSubscriber;
@@ -42,6 +44,15 @@ fn cli() -> Command {
                 .arg(arg!(env: -e <ENV>).value_parser(value_parser!(String))),
         )
         .subcommand(Command::new("seed").about("Seed the database"))
+        .subcommand(
+            Command::new("generate")
+                .subcommand_required(true)
+                .subcommand(
+                    Command::new("migration")
+                        .about("Generate a new migration file")
+                        .arg(arg!([NAME])),
+                ),
+        )
 }
 
 fn read_dotenv_config(file: &str) {
@@ -76,6 +87,16 @@ async fn main() {
         Some(("seed", _sub_matches)) => {
             seed().await;
         }
+        Some(("generate", sub_matches)) => match sub_matches.subcommand() {
+            Some(("migration", sub_matches)) => {
+                let name = sub_matches
+                        .get_one::<String>("NAME")
+                        .map(|s| s.as_str())
+                        .expect("No migration name specified – must specify a name to use for the migration file!");
+                generate_migration(name).await;
+            }
+            _ => unreachable!(),
+        },
         _ => unreachable!(),
     }
 }
@@ -218,4 +239,13 @@ async fn get_root_db_client(env: &Environment) -> Client {
     });
 
     client
+}
+
+async fn generate_migration(name: &str) {
+    let timestamp = SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .unwrap();
+    let name = format!("V{}__{}.sql", timestamp.as_secs(), name);
+    File::create(format!("./db/migrations/{}", name)).expect("❌ Could not create migration file!");
+    println!("✅ Created migration {}.", name);
 }
