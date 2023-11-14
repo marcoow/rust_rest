@@ -13,14 +13,14 @@ use std::env;
 use tokio_postgres::{config::Config, NoTls};
 use tower::ServiceExt;
 
-pub struct TestSetup {
+pub struct TestContext {
     pub app: Router,
     pub pool: ConnectionPool,
     db_config: Config,
 }
 
-pub fn build_test_context(router: Router, pool: ConnectionPool, test_db_config: Config) -> TestSetup {
-    TestSetup {
+pub fn build_test_context(router: Router, pool: ConnectionPool, test_db_config: Config) -> TestContext {
+    TestContext {
         app: router,
         pool,
         db_config: test_db_config,
@@ -63,7 +63,7 @@ pub async fn prepare_db() -> Config {
     test_db_config
 }
 
-pub async fn teardown(context: TestSetup) {
+pub async fn teardown(context: TestContext) {
     drop(context.app);
     drop(context.pool);
     let db_name = context.db_config.get_dbname().unwrap();
