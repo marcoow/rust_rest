@@ -51,6 +51,14 @@ cargo db create
 cargo db reset
 ```
 
+#### Generating migrations
+
+In order to generate a new migration, use the `generate` command:
+
+```bash
+cargo generate migration <migration-name>
+```
+
 ### Running the server
 
 ```bash
