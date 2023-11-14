@@ -96,12 +96,13 @@ pub async fn create_task(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_helpers::{request, setup, teardown, TestSetup};
     use axum::{
         body::Body,
         http::{self, Method},
     };
+    use axum_on_rails::test_helpers::{request, TestSetup, teardown};
     use axum_on_rails_procs::test;
+    use crate::test::helpers::setup;
     use serde_json::json;
     use std::collections::HashMap;
 

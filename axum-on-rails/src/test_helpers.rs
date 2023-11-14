@@ -1,14 +1,10 @@
-use crate::routes::routes;
-use crate::state::AppState;
-use crate::state::ConnectionPool;
+use crate::ConnectionPool;
 use axum::{
     body::Body,
     http::{Method, Request},
     response::Response,
     Router,
 };
-use bb8::Pool;
-use bb8_postgres::PostgresConnectionManager;
 use core::str::FromStr;
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
@@ -23,7 +19,15 @@ pub struct TestSetup {
     db_config: Config,
 }
 
-async fn prepare_db() -> Config {
+pub fn build_test_context(router: Router, pool: ConnectionPool, test_db_config: Config) -> TestSetup {
+    TestSetup {
+        app: router,
+        pool,
+        db_config: test_db_config,
+    }
+}
+
+pub async fn prepare_db() -> Config {
     dotenvy::from_filename(".env.test").ok();
     let db_url = env::var("DATABASE_URL").expect("No DATABASE_URL set – cannot run tests!");
     let config = Config::from_str(&db_url).unwrap();
@@ -57,22 +61,6 @@ async fn prepare_db() -> Config {
     test_db_config.dbname(&test_db_name);
 
     test_db_config
-}
-
-pub async fn setup() -> TestSetup {
-    let test_db_config = prepare_db().await;
-    let manager = PostgresConnectionManager::new(test_db_config.clone(), NoTls);
-    let pool = Pool::builder().build(manager).await.unwrap();
-
-    let app = routes(AppState {
-        db_pool: pool.clone(),
-    });
-
-    TestSetup {
-        app,
-        pool,
-        db_config: test_db_config,
-    }
 }
 
 pub async fn teardown(context: TestSetup) {
