@@ -44,28 +44,28 @@ fn commands() -> Command {
 }
 
 pub async fn cli() {
-  let matches = commands().get_matches();
-  
-  match matches.subcommand() {
-      Some(("drop", sub_matches)) => {
-          drop(sub_matches).await;
-      }
-      Some(("create", sub_matches)) => {
-          create(sub_matches).await;
-      }
-      Some(("migrate", sub_matches)) => {
-          migrate(sub_matches).await;
-      }
-      Some(("reset", sub_matches)) => {
-          drop(sub_matches).await;
-          create(sub_matches).await;
-          migrate(sub_matches).await;
-      }
-      Some(("seed", _sub_matches)) => {
-          seed().await;
-      }
-      _ => unreachable!(),
-  }
+    let matches = commands().get_matches();
+
+    match matches.subcommand() {
+        Some(("drop", sub_matches)) => {
+            drop(sub_matches).await;
+        }
+        Some(("create", sub_matches)) => {
+            create(sub_matches).await;
+        }
+        Some(("migrate", sub_matches)) => {
+            migrate(sub_matches).await;
+        }
+        Some(("reset", sub_matches)) => {
+            drop(sub_matches).await;
+            create(sub_matches).await;
+            migrate(sub_matches).await;
+        }
+        Some(("seed", _sub_matches)) => {
+            seed().await;
+        }
+        _ => unreachable!(),
+    }
 }
 
 fn read_dotenv_config(file: &str) {

@@ -19,7 +19,11 @@ pub struct TestContext {
     db_config: Config,
 }
 
-pub fn build_test_context(router: Router, pool: ConnectionPool, test_db_config: Config) -> TestContext {
+pub fn build_test_context(
+    router: Router,
+    pool: ConnectionPool,
+    test_db_config: Config,
+) -> TestContext {
     TestContext {
         app: router,
         pool,
