@@ -1,5 +1,5 @@
 [package]
-name = "test-macro"
+name = "axum-on-rails-procs"
 version = "0.1.0"
 edition = "2021"
 

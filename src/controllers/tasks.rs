@@ -101,9 +101,9 @@ mod tests {
         body::Body,
         http::{self, Method},
     };
+    use axum_on_rails_procs::test;
     use serde_json::json;
     use std::collections::HashMap;
-    use test_macro::test;
 
     type TasksList = Vec<Task>;
 
