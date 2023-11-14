@@ -9,7 +9,7 @@ mod routes;
 mod state;
 
 #[cfg(test)]
-mod test_helpers;
+mod test;
 
 #[tokio::main]
 async fn main() {

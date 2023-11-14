@@ -96,19 +96,20 @@ pub async fn create_task(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_helpers::{request, setup, teardown, TestSetup};
+    use crate::test::helpers::setup;
     use axum::{
         body::Body,
         http::{self, Method},
     };
+    use axum_on_rails::test_helpers::{request, teardown, TestContext};
+    use axum_on_rails_procs::test;
     use serde_json::json;
     use std::collections::HashMap;
-    use test_macro::test;
 
     type TasksList = Vec<Task>;
 
     #[test]
-    async fn test_get_tasks(context: &TestSetup) {
+    async fn test_get_tasks(context: &TestContext) {
         let conn = context.pool.get().await.unwrap();
 
         conn.query(
@@ -136,7 +137,7 @@ mod tests {
     }
 
     #[test]
-    async fn test_create_tasks_unauthorized(context: &TestSetup) {
+    async fn test_create_tasks_unauthorized(context: &TestContext) {
         let mut headers = HashMap::new();
         headers.insert(http::header::CONTENT_TYPE.as_str(), "application/json");
 
@@ -146,7 +147,7 @@ mod tests {
     }
 
     #[test]
-    async fn test_create_tasks_authorized(context: &TestSetup) {
+    async fn test_create_tasks_authorized(context: &TestContext) {
         let conn = context.pool.get().await.unwrap();
 
         conn.execute(
@@ -179,7 +180,7 @@ mod tests {
     }
 
     #[test]
-    async fn test_get_task(context: &TestSetup) {
+    async fn test_get_task(context: &TestContext) {
         let conn = context.pool.get().await.unwrap();
 
         let rows = conn

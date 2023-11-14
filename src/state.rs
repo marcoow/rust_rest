@@ -1,10 +1,9 @@
+use axum_on_rails::ConnectionPool;
 use bb8::Pool;
 use bb8_postgres::PostgresConnectionManager;
 use dotenvy::dotenv;
 use std::env;
 use tokio_postgres::NoTls;
-
-pub type ConnectionPool = Pool<PostgresConnectionManager<NoTls>>;
 
 #[derive(Clone)]
 pub struct AppState {
