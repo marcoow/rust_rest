@@ -1,3 +1,4 @@
+use crate::cli::ui::{log, LogType};
 use clap::{arg, Command};
 use std::fs::File;
 use std::time::SystemTime;
@@ -9,7 +10,7 @@ fn commands() -> Command {
         .subcommand(
             Command::new("migration")
                 .about("Generate a new migration file")
-                .arg(arg!([NAME])),
+                .arg(arg!([NAME]).required(true)),
         )
 }
 
@@ -21,9 +22,7 @@ pub async fn cli() {
             let name = sub_matches
                 .get_one::<String>("NAME")
                 .map(|s| s.as_str())
-                .expect(
-                "No migration name specified – must specify a name to use for the migration file!",
-            );
+                .unwrap();
             generate_migration(name).await;
         }
         _ => unreachable!(),
@@ -35,6 +34,11 @@ async fn generate_migration(name: &str) {
         .duration_since(SystemTime::UNIX_EPOCH)
         .unwrap();
     let name = format!("V{}__{}.sql", timestamp.as_secs(), name);
-    File::create(format!("./db/migrations/{}", name)).expect("❌ Could not create migration file!");
-    println!("✅ Created migration {}.", name);
+    match File::create(format!("./db/migrations/{}", name)) {
+        Ok(_) => log(
+            LogType::Success,
+            format!("Created migration {}.", name).as_str(),
+        ),
+        Err(_) => log(LogType::Error, "Could not create migration file!"),
+    }
 }
