@@ -1,6 +1,6 @@
 use crate::routes::routes;
 use crate::state::AppState;
-use axum_on_rails::test_helpers::{build_test_context, prepare_db, TestContext};
+use axum_on_rails::test::helpers::{build_test_context, prepare_db, TestContext};
 use bb8::Pool;
 use bb8_postgres::PostgresConnectionManager;
 use tokio_postgres::NoTls;

@@ -101,7 +101,7 @@ mod tests {
         body::Body,
         http::{self, Method},
     };
-    use axum_on_rails::test_helpers::{request, teardown, TestContext};
+    use axum_on_rails::test::helpers::{request, teardown, TestContext};
     use axum_on_rails_procs::test;
     use serde_json::json;
     use std::collections::HashMap;
