@@ -9,7 +9,7 @@ use tokio_postgres::NoTls;
 #[derive(Clone)]
 pub struct AppState {
     pub db_pool: ConnectionPool,
-    pub sqlx_pool: PgPool,
+    pub sqlx_pool: Pool,
 }
 
 pub async fn app_state() -> AppState {
