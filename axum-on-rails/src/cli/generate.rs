@@ -9,7 +9,7 @@ fn commands() -> Command {
         .subcommand(
             Command::new("migration")
                 .about("Generate a new migration file")
-                .arg(arg!([NAME])),
+                .arg(arg!([NAME]).required(true))
         )
 }
 
@@ -20,10 +20,7 @@ pub async fn cli() {
         Some(("migration", sub_matches)) => {
             let name = sub_matches
                 .get_one::<String>("NAME")
-                .map(|s| s.as_str())
-                .expect(
-                "No migration name specified – must specify a name to use for the migration file!",
-            );
+                .map(|s| s.as_str()).unwrap();
             generate_migration(name).await;
         }
         _ => unreachable!(),
