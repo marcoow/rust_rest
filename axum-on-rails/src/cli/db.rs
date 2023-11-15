@@ -4,15 +4,11 @@ use std::env;
 use std::fs;
 use tokio_postgres::{config::Config, Client, NoTls};
 use tracing::error;
+use crate::cli::env::{parse_env, Environment};
 
 mod embedded {
     use refinery::embed_migrations;
     embed_migrations!("../db/migrations");
-}
-
-enum Environment {
-    Development,
-    Test,
 }
 
 fn commands() -> Command {
@@ -73,7 +69,7 @@ fn read_dotenv_config(file: &str) {
 }
 
 async fn drop(sub_matches: &ArgMatches) {
-    let env = choose_env(sub_matches);
+    let env = parse_env(sub_matches);
 
     match env {
         Environment::Development => println!("ℹ️ Dropping development database…"),
@@ -95,7 +91,7 @@ async fn drop(sub_matches: &ArgMatches) {
 }
 
 async fn create(sub_matches: &ArgMatches) {
-    let env = choose_env(sub_matches);
+    let env = parse_env(sub_matches);
 
     match env {
         Environment::Development => println!("ℹ️ Creating development database…"),
@@ -117,7 +113,7 @@ async fn create(sub_matches: &ArgMatches) {
 }
 
 async fn migrate(sub_matches: &ArgMatches) {
-    let env = choose_env(sub_matches);
+    let env = parse_env(sub_matches);
 
     match env {
         Environment::Development => println!("ℹ️ Migrating development database…"),
@@ -158,19 +154,6 @@ async fn seed() {
             println!("✅ Seeded database.");
         }
         Err(_) => println!("❌ Seeding database failed."),
-    }
-}
-
-fn choose_env(sub_matches: &ArgMatches) -> Environment {
-    let env = sub_matches
-        .get_one::<String>("env")
-        .map(|s| s.as_str())
-        .unwrap_or("development");
-
-    if env == "test" {
-        Environment::Test
-    } else {
-        Environment::Development
     }
 }
 
