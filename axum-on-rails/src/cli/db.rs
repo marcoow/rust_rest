@@ -1,4 +1,4 @@
-use clap::{arg, value_parser, ArgMatches, Command};
+use clap::{arg, value_parser, Command};
 use core::str::FromStr;
 use std::env;
 use std::fs;
@@ -44,18 +44,22 @@ pub async fn cli() {
 
     match matches.subcommand() {
         Some(("drop", sub_matches)) => {
-            drop(sub_matches).await;
+            let env = parse_env(&sub_matches);
+            drop(&env).await;
         }
         Some(("create", sub_matches)) => {
-            create(sub_matches).await;
+            let env = parse_env(&sub_matches);
+            create(&env).await;
         }
         Some(("migrate", sub_matches)) => {
-            migrate(sub_matches).await;
+            let env = parse_env(&sub_matches);
+            migrate(&env).await;
         }
         Some(("reset", sub_matches)) => {
-            drop(sub_matches).await;
-            create(sub_matches).await;
-            migrate(sub_matches).await;
+            let env = parse_env(&sub_matches);
+            drop(&env).await;
+            create(&env).await;
+            migrate(&env).await;
         }
         Some(("seed", _sub_matches)) => {
             seed().await;
@@ -68,9 +72,7 @@ fn read_dotenv_config(file: &str) {
     dotenvy::from_filename(file).ok();
 }
 
-async fn drop(sub_matches: &ArgMatches) {
-    let env = parse_env(sub_matches);
-
+async fn drop(env: &Environment) {
     match env {
         Environment::Development => println!("ℹ️ Dropping development database…"),
         Environment::Test => println!("ℹ️ Dropping test database…"),
@@ -90,9 +92,7 @@ async fn drop(sub_matches: &ArgMatches) {
     }
 }
 
-async fn create(sub_matches: &ArgMatches) {
-    let env = parse_env(sub_matches);
-
+async fn create(env: &Environment) {
     match env {
         Environment::Development => println!("ℹ️ Creating development database…"),
         Environment::Test => println!("ℹ️ Creating test database…"),
@@ -112,9 +112,7 @@ async fn create(sub_matches: &ArgMatches) {
     }
 }
 
-async fn migrate(sub_matches: &ArgMatches) {
-    let env = parse_env(sub_matches);
-
+async fn migrate(env: &Environment) {
     match env {
         Environment::Development => println!("ℹ️ Migrating development database…"),
         Environment::Test => println!("ℹ️ Migrating test database…"),

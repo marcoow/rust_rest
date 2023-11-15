@@ -1,5 +1,6 @@
 use clap::ArgMatches;
 
+#[derive(Debug)]
 pub enum Environment {
     Development,
     Test,
