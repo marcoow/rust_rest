@@ -7,22 +7,12 @@ use tracing::info;
 use validator::Validate;
 
 pub async fn get_tasks(
-    State(state): State<AppState>,
+    State(app_state): State<AppState>,
 ) -> Result<Json<Vec<Task>>, (StatusCode, String)> {
-    let conn = state.db_pool.get().await.map_err(internal_error)?;
-
-    let rows = conn
-        .query("select id, description from tasks", &[])
+    let tasks = sqlx::query_as!(Task, "SELECT id, description FROM tasks")
+        .fetch_all(&app_state.sqlx_pool)
         .await
         .map_err(internal_error)?;
-
-    let tasks = rows
-        .iter()
-        .map(|row| Task {
-            id: row.get(0),
-            description: row.get(1),
-        })
-        .collect();
 
     info!("responding with {:?}", tasks);
 
@@ -30,28 +20,17 @@ pub async fn get_tasks(
 }
 
 pub async fn get_task(
-    State(state): State<AppState>,
+    State(app_state): State<AppState>,
     Path(id): Path<i32>,
 ) -> Result<Json<Task>, (StatusCode, String)> {
-    let conn = state.db_pool.get().await.map_err(internal_error)?;
-
-    if let Ok(row) = conn
-        .query_one("select id, description from tasks where id = $1", &[&id])
+    let task = sqlx::query_as!(Task, "SELECT id, description FROM tasks WHERE id = $1", id)
+        .fetch_one(&app_state.sqlx_pool)
         .await
-    {
-        let task = Task {
-            id: row.get(0),
-            description: row.get(1),
-        };
+        .map_err(internal_error)?;
 
-        info!("responding with {:?}", task);
+    info!("responding with {:?}", task);
 
-        Ok(Json(task))
-    } else {
-        info!("no task found for id {}", id);
-
-        Err((StatusCode::NOT_FOUND, "".to_string()))
-    }
+    Ok(Json(task))
 }
 
 #[derive(Deserialize, Validate)]
@@ -62,23 +41,22 @@ pub struct CreateTask {
 }
 
 pub async fn create_task(
-    State(state): State<AppState>,
+    State(app_state): State<AppState>,
     Json(payload): Json<CreateTask>,
 ) -> Result<Json<Task>, (StatusCode, String)> {
     match payload.validate() {
         Ok(_) => {
             let description = payload.description;
 
-            let conn = state.db_pool.get().await.map_err(internal_error)?;
-            let row = conn
-                .query_one(
-                    "insert into tasks (description) values ($1) returning id",
-                    &[&description],
-                )
-                .await
-                .map_err(internal_error)?;
+            let record = sqlx::query!(
+                "INSERT INTO tasks (description) VALUES ($1) RETURNING id",
+                description
+            )
+            .fetch_one(&app_state.sqlx_pool)
+            .await
+            .map_err(internal_error)?;
 
-            let id = row.get(0);
+            let id = record.id;
 
             let task = Task { id, description };
 
