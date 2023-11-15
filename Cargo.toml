@@ -18,6 +18,7 @@ tokio = { version = "1.33", features = ["full"] }
 tokio-postgres = "0.7"
 tower-http = { version = "0.4", features = ["full"] }
 tracing = "0.1"
+tracing-panic = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 validator = { version = "0.16", features = ["derive"] }
 
