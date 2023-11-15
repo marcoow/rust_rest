@@ -1,6 +1,7 @@
 use axum::http::StatusCode;
 use std::net::SocketAddr;
 use tracing::{debug, Level};
+use tracing_panic::panic_hook;
 use tracing_subscriber::FmtSubscriber;
 
 mod controllers;
@@ -19,6 +20,8 @@ async fn main() {
         .finish();
 
     tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
+
+    std::panic::set_hook(Box::new(panic_hook));
 
     let app_state = state::app_state().await;
     let app = routes::routes(app_state);
