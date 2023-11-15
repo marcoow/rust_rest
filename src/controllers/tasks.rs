@@ -1,15 +1,10 @@
-use crate::{internal_error, state::AppState};
+use crate::{entities::Task, internal_error, state::AppState};
 use axum::{extract::Path, extract::State, http::StatusCode, Json};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
+#[cfg(test)]
+use serde::Serialize;
 use tracing::info;
 use validator::Validate;
-
-#[derive(Serialize, Debug)]
-#[cfg_attr(test, derive(Deserialize))]
-pub struct Task {
-    id: i32,
-    description: String,
-}
 
 pub async fn get_tasks(
     State(state): State<AppState>,
