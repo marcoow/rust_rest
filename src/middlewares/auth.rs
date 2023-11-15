@@ -1,3 +1,4 @@
+use crate::entities::User;
 use crate::state::AppState;
 use axum::{
     extract::State,
@@ -29,12 +30,8 @@ pub async fn auth<B>(
         return Err(StatusCode::UNAUTHORIZED);
     };
 
-    struct UserRecord {
-        id: i32,
-        name: String,
-    }
     if let Ok(user) = sqlx::query_as!(
-        UserRecord,
+        User,
         "SELECT id, name FROM users WHERE token = $1",
         auth_header
     )

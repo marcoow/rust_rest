@@ -1,5 +1,5 @@
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     name varchar(255) NOT NULL,
-    token varchar(100)
+    token varchar(100) NOT NULL
 );
