@@ -1,16 +1,16 @@
 use crate::cli::env::Environment;
 
 pub enum LogType {
-  Info,
-  Success,
-  Error,
+    Info,
+    Success,
+    Error,
 }
 
 pub fn log_per_env(env: &Environment, log_type: LogType, dev_log: &str, test_log: &str) {
-  match env {
-      Environment::Development => log(log_type, dev_log),
-      Environment::Test => log(log_type, test_log),
-  }
+    match env {
+        Environment::Development => log(log_type, dev_log),
+        Environment::Test => log(log_type, test_log),
+    }
 }
 
 pub fn log(log_type: LogType, log: &str) {
@@ -18,5 +18,5 @@ pub fn log(log_type: LogType, log: &str) {
         LogType::Info => println!("ℹ️  {}", log),
         LogType::Success => println!("✅ {}", log),
         LogType::Error => println!("❌ {}", log),
-  }
+    }
 }
