@@ -5,6 +5,7 @@ use std::fs;
 use tokio_postgres::{config::Config, Client, NoTls};
 use tracing::error;
 use crate::cli::env::{parse_env, Environment};
+use crate::cli::ui::{log, log_per_env, LogType};
 
 mod embedded {
     use refinery::embed_migrations;
@@ -73,10 +74,7 @@ fn read_dotenv_config(file: &str) {
 }
 
 async fn drop(env: &Environment) {
-    match env {
-        Environment::Development => println!("ℹ️ Dropping development database…"),
-        Environment::Test => println!("ℹ️ Dropping test database…"),
-    }
+    log_per_env(env, LogType::Info, "Dropping development database…", "Dropping test database…");
 
     let db_config = get_db_config(&env);
     let db_name = db_config.get_dbname().unwrap();
@@ -87,16 +85,13 @@ async fn drop(env: &Environment) {
         .await;
 
     match result {
-        Ok(_) => println!("✅ Database {} dropped successfully.", &db_name),
-        Err(_) => println!("❌ Dropping database {} failed!", &db_name),
+        Ok(_) => log(LogType::Success, format!("Database {} dropped successfully.", &db_name).as_str()),
+        Err(_) => log(LogType::Error, format!("Dropping database {} failed!", &db_name).as_str()),
     }
 }
 
 async fn create(env: &Environment) {
-    match env {
-        Environment::Development => println!("ℹ️ Creating development database…"),
-        Environment::Test => println!("ℹ️ Creating test database…"),
-    }
+    log_per_env(env, LogType::Info, "Creating development database…", "Creating test database…");
 
     let db_config = get_db_config(&env);
     let db_name = db_config.get_dbname().unwrap();
@@ -107,16 +102,13 @@ async fn create(env: &Environment) {
         .await;
 
     match result {
-        Ok(_) => println!("✅ Database {} created successfully.", &db_name),
-        Err(_) => println!("❌ Creating database {} failed!", &db_name),
+        Ok(_) => log(LogType::Success, format!("Database {} created successfully.", &db_name).as_str()),
+        Err(_) => log(LogType::Error, format!("Creating database {} failed!", &db_name).as_str()),
     }
 }
 
 async fn migrate(env: &Environment) {
-    match env {
-        Environment::Development => println!("ℹ️ Migrating development database…"),
-        Environment::Test => println!("ℹ️ Migrating test database…"),
-    }
+    log_per_env(env, LogType::Info, "Migrating development database…", "Migrating test database…");
 
     let mut client = get_db_client(&env).await;
 
@@ -128,13 +120,13 @@ async fn migrate(env: &Environment) {
     let migrations_applied = report.applied_migrations().len();
 
     match migrations_applied {
-        0 => println!("ℹ️ There were no pending migrations to apply."),
-        n => println!("✅ Applied {n} migrations."),
+        0 => log(LogType::Info, "There were no pending migrations to apply."),
+        n => log(LogType::Success, format!("Applied {} migrations.", n).as_str()),
     }
 }
 
 async fn seed() {
-    println!("ℹ️ Seeding development database…");
+    log(LogType::Info, "Seeding development database…");
 
     let mut client = get_db_client(&Environment::Development).await;
 
@@ -148,10 +140,10 @@ async fn seed() {
             let _ = transaction
                 .commit()
                 .await
-                .map_err(|_| println!("❌ Seeding database failed."));
-            println!("✅ Seeded database.");
+                .map_err(|_| log(LogType::Error, "Seeding database failed!"));
+            log(LogType::Info, "Seeded database.");
         }
-        Err(_) => println!("❌ Seeding database failed."),
+        Err(_) => log(LogType::Error, "Seeding database failed!"),
     }
 }
 
