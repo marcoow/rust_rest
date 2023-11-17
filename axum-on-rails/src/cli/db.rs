@@ -1,13 +1,13 @@
 use crate::cli::env::{parse_env, Environment};
 use crate::cli::ui::{log, log_per_env, LogType};
 use clap::{arg, value_parser, Command};
+use sqlx::postgres::{PgConnectOptions, PgConnection, PgPoolOptions};
+use sqlx::{migrate::Migrator, ConnectOptions, Connection, Executor};
 use std::env;
 use std::fs;
-use tracing::error;
 use url::Url;
-use sqlx::{ConnectOptions, PgPool, Connection, Executor, migrate::Migrator};
-use sqlx::postgres::{PgConnectOptions, PgConnection, PgPoolOptions};
-use std::path::Path;
+
+static MIGRATOR: Migrator = sqlx::migrate!("../db/migrations");
 
 fn commands() -> Command {
     Command::new("db")
@@ -42,19 +42,19 @@ pub async fn cli() {
 
     match matches.subcommand() {
         Some(("drop", sub_matches)) => {
-            let env = parse_env(&sub_matches);
+            let env = parse_env(sub_matches);
             drop(&env).await;
         }
         Some(("create", sub_matches)) => {
-            let env = parse_env(&sub_matches);
+            let env = parse_env(sub_matches);
             create(&env).await;
         }
         Some(("migrate", sub_matches)) => {
-            let env = parse_env(&sub_matches);
+            let env = parse_env(sub_matches);
             migrate(&env).await;
         }
         Some(("reset", sub_matches)) => {
-            let env = parse_env(&sub_matches);
+            let env = parse_env(sub_matches);
             drop(&env).await;
             create(&env).await;
             migrate(&env).await;
@@ -78,9 +78,9 @@ async fn drop(env: &Environment) {
         "Dropping test database…",
     );
 
-    let db_config = get_db_config(&env);
+    let db_config = get_db_config(env);
     let db_name = db_config.get_database().unwrap();
-    let mut root_connection = get_root_db_client(&env).await;
+    let mut root_connection = get_root_db_client(env).await;
 
     let query = format!("DROP DATABASE IF EXISTS {}", db_name);
     let result = root_connection.execute(query.as_str()).await;
@@ -105,9 +105,9 @@ async fn create(env: &Environment) {
         "Creating test database…",
     );
 
-    let db_config = get_db_config(&env);
+    let db_config = get_db_config(env);
     let db_name = db_config.get_database().unwrap();
-    let mut root_connection = get_root_db_client(&env).await;
+    let mut root_connection = get_root_db_client(env).await;
 
     let query = format!("CREATE DATABASE {}", db_name);
     let result = root_connection.execute(query.as_str()).await;
@@ -133,20 +133,16 @@ async fn migrate(env: &Environment) {
     );
 
     let db_config = get_db_config(env);
-    let mut sqlx_pool = PgPoolOptions::new()
-    .connect_with(db_config)
-    .await
-    .expect("Could not connect to database!");
+    let db_pool = PgPoolOptions::new()
+        .connect_with(db_config)
+        .await
+        .expect("Could not connect to database!");
 
-    let migrator = Migrator::new(Path::new("../db/migrations")).await.unwrap();    
-    migrator.migrate(&sqlx_pool).await.unwrap();
+    let result = MIGRATOR.run(&db_pool).await;
 
-    match migrator.migrations. {
-        0 => log(LogType::Info, "There were no pending migrations to apply."),
-        n => log(
-            LogType::Success,
-            format!("Applied {} migrations.", n).as_str(),
-        ),
+    match result {
+        Ok(_) => log(LogType::Info, "Migrated database successfully."),
+        _ => log(LogType::Error, "Running migrations failed!"),
     }
 }
 
@@ -163,7 +159,7 @@ async fn seed() {
 
     match result {
         Ok(_) => {
-            transaction
+            let _ = transaction
                 .commit()
                 .await
                 .map_err(|_| log(LogType::Error, "Seeding database failed!"));
@@ -179,7 +175,12 @@ fn get_db_config(env: &Environment) -> PgConnectOptions {
         Environment::Development => read_dotenv_config(".env"),
     }
 
-    let db_url = Url::parse(env::var("DATABASE_URL").expect("No DATABASE_URL set – cannot run tests!").as_str()).expect("Invalid DATABASE_URL!");
+    let db_url = Url::parse(
+        env::var("DATABASE_URL")
+            .expect("No DATABASE_URL set – cannot run tests!")
+            .as_str(),
+    )
+    .expect("Invalid DATABASE_URL!");
     ConnectOptions::from_url(&db_url).expect("Invalid DATABASE_URL!")
 }
 
@@ -194,6 +195,6 @@ async fn get_root_db_client(env: &Environment) -> PgConnection {
     let db_config = get_db_config(env);
     let root_db_config = db_config.clone().database("postgres");
     let connection: PgConnection = Connection::connect_with(&root_db_config).await.unwrap();
-    
+
     connection
 }

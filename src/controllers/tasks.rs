@@ -10,7 +10,7 @@ pub async fn get_tasks(
     State(app_state): State<AppState>,
 ) -> Result<Json<Vec<Task>>, (StatusCode, String)> {
     let tasks = sqlx::query_as!(Task, "SELECT id, description FROM tasks")
-        .fetch_all(&app_state.sqlx_pool)
+        .fetch_all(&app_state.db_pool)
         .await
         .map_err(internal_error)?;
 
@@ -24,7 +24,7 @@ pub async fn get_task(
     Path(id): Path<i32>,
 ) -> Result<Json<Task>, (StatusCode, String)> {
     let task = sqlx::query_as!(Task, "SELECT id, description FROM tasks WHERE id = $1", id)
-        .fetch_one(&app_state.sqlx_pool)
+        .fetch_one(&app_state.db_pool)
         .await
         .map_err(internal_error)?;
 
@@ -52,7 +52,7 @@ pub async fn create_task(
                 "INSERT INTO tasks (description) VALUES ($1) RETURNING id",
                 description
             )
-            .fetch_one(&app_state.sqlx_pool)
+            .fetch_one(&app_state.db_pool)
             .await
             .map_err(internal_error)?;
 
@@ -83,12 +83,11 @@ mod tests {
 
     #[test]
     async fn test_get_tasks(context: &TestContext) {
-        let conn = context.pool.get().await.unwrap();
-
-        conn.query(
-            "insert into tasks (description) values ($1) returning id",
-            &[&"Test Task"],
+        sqlx::query!(
+            "INSERT INTO tasks (description) VALUES ($1) RETURNING id",
+            "Test Task",
         )
+        .fetch_one(&context.db_pool)
         .await
         .unwrap();
 
@@ -121,12 +120,12 @@ mod tests {
 
     #[test]
     async fn test_create_tasks_authorized(context: &TestContext) {
-        let conn = context.pool.get().await.unwrap();
-
-        conn.execute(
-            "insert into users (name, token) values ($1, $2)",
-            &[&"Test User", &"s3kuR t0k3n!"],
+        sqlx::query!(
+            "INSERT INTO users (name, token) VALUES ($1, $2) RETURNING id",
+            "Test Task",
+            "s3kuR t0k3n!",
         )
+        .fetch_one(&context.db_pool)
         .await
         .unwrap();
 
@@ -154,16 +153,14 @@ mod tests {
 
     #[test]
     async fn test_get_task(context: &TestContext) {
-        let conn = context.pool.get().await.unwrap();
-
-        let rows = conn
-            .query(
-                "insert into tasks (description) values ($1) returning id",
-                &[&"Test Task"],
-            )
-            .await
-            .unwrap();
-        let task_id: i32 = rows[0].get(0);
+        let record = sqlx::query!(
+            "INSERT INTO tasks (description) VALUES ($1) RETURNING id",
+            "Test Task",
+        )
+        .fetch_one(&context.db_pool)
+        .await
+        .unwrap();
+        let task_id: i32 = record.id;
 
         let response = request(
             &context.app,

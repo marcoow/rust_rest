@@ -6,35 +6,41 @@ use axum::{
 };
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
+use sqlx::postgres::{PgConnectOptions, PgConnection};
+use sqlx::{ConnectOptions, Connection, Executor, PgPool};
 use std::collections::HashMap;
 use std::env;
-use url::Url;
 use tower::ServiceExt;
-use sqlx::{ConnectOptions, PgPool, Connection, Executor};
-use sqlx::postgres::{PgConnectOptions, PgConnection};
+use url::Url;
 
 pub struct TestContext {
     pub app: Router,
-    pub pool: PgPool,
+    pub db_pool: PgPool,
     db_config: PgConnectOptions,
 }
 
 pub fn build_test_context(
     router: Router,
-    pool: PgPool,
+    db_pool: PgPool,
     test_db_config: PgConnectOptions,
 ) -> TestContext {
     TestContext {
         app: router,
-        pool,
+        db_pool,
         db_config: test_db_config,
     }
 }
 
 pub async fn prepare_db() -> PgConnectOptions {
     dotenvy::from_filename(".env.test").ok();
-    let db_url = Url::parse(env::var("DATABASE_URL").expect("No DATABASE_URL set – cannot run tests!").as_str()).expect("Invalid DATABASE_URL!");
-    let config: PgConnectOptions = ConnectOptions::from_url(&db_url).expect("Invalid DATABASE_URL!");
+    let db_url = Url::parse(
+        env::var("DATABASE_URL")
+            .expect("No DATABASE_URL set – cannot run tests!")
+            .as_str(),
+    )
+    .expect("Invalid DATABASE_URL!");
+    let config: PgConnectOptions =
+        ConnectOptions::from_url(&db_url).expect("Invalid DATABASE_URL!");
     let db_name = config.get_database().unwrap();
 
     let root_db_config = config.clone().database("postgres");
@@ -50,14 +56,12 @@ pub async fn prepare_db() -> PgConnectOptions {
     let query = format!("CREATE DATABASE {} TEMPLATE {}", test_db_name, db_name);
     connection.execute(query.as_str()).await.unwrap();
 
-    let test_db_config = config.clone().database(&test_db_name);
-
-    test_db_config
+    config.clone().database(&test_db_name)
 }
 
 pub async fn teardown(context: TestContext) {
     drop(context.app);
-    drop(context.pool);
+    drop(context.db_pool);
     let db_name = context.db_config.get_database().unwrap();
     println!("cleaning up DB, {}", &db_name);
     let root_db_config = context.db_config.clone().database("postgres");

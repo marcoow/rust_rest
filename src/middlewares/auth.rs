@@ -35,7 +35,7 @@ pub async fn auth<B>(
         "SELECT id, name FROM users WHERE token = $1",
         auth_header
     )
-    .fetch_one(&app_state.sqlx_pool)
+    .fetch_one(&app_state.db_pool)
     .await
     {
         let current_user = CurrentUser {
