@@ -1,4 +1,4 @@
 CREATE TABLE users (
-    id SERIAL PRIMARY KEY,
+    id uuid PRIMARY KEY default gen_random_uuid(),
     name varchar(255) NOT NULL
 );

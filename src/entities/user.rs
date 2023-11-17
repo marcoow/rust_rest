@@ -1,7 +1,8 @@
 use serde::Serialize;
+use uuid::Uuid;
 
 #[derive(Serialize, Debug)]
 pub struct User {
-    pub id: i32,
+    pub id: Uuid,
     pub name: String,
 }

@@ -4,6 +4,7 @@ use serde::Deserialize;
 #[cfg(test)]
 use serde::Serialize;
 use tracing::info;
+use uuid::Uuid;
 use validator::Validate;
 
 pub async fn get_tasks(
@@ -21,7 +22,7 @@ pub async fn get_tasks(
 
 pub async fn get_task(
     State(app_state): State<AppState>,
-    Path(id): Path<i32>,
+    Path(id): Path<Uuid>,
 ) -> Result<Json<Task>, (StatusCode, String)> {
     let task = sqlx::query_as!(Task, "SELECT id, description FROM tasks WHERE id = $1", id)
         .fetch_one(&app_state.db_pool)
@@ -160,7 +161,7 @@ mod tests {
         .fetch_one(&context.db_pool)
         .await
         .unwrap();
-        let task_id: i32 = record.id;
+        let task_id: Uuid = record.id;
 
         let response = request(
             &context.app,

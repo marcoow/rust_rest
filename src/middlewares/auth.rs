@@ -6,11 +6,12 @@ use axum::{
     middleware::Next,
     response::Response,
 };
+use uuid::Uuid;
 
 #[allow(dead_code)]
 #[derive(Clone)]
 struct CurrentUser {
-    id: i32,
+    id: Uuid,
     name: String,
 }
 
