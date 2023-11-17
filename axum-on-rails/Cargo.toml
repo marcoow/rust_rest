@@ -5,8 +5,6 @@ edition = "2021"
 
 [dependencies]
 axum = "0.6"
-bb8 = "0.8"
-bb8-postgres = "0.8"
 clap = "4.4"
 dotenvy = "0.15"
 rand = "0.8"
