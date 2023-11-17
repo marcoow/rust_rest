@@ -122,7 +122,7 @@ mod tests {
     async fn test_create_tasks_authorized(context: &TestContext) {
         sqlx::query!(
             "INSERT INTO users (name, token) VALUES ($1, $2) RETURNING id",
-            "Test Task",
+            "Test User",
             "s3kuR t0k3n!",
         )
         .fetch_one(&context.db_pool)
