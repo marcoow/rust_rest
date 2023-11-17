@@ -1,3 +1,4 @@
+use crate::entities::User;
 use crate::state::AppState;
 use axum::{
     extract::State,
@@ -5,11 +6,12 @@ use axum::{
     middleware::Next,
     response::Response,
 };
+use uuid::Uuid;
 
 #[allow(dead_code)]
 #[derive(Clone)]
 struct CurrentUser {
-    id: i32,
+    id: Uuid,
     name: String,
 }
 
@@ -29,24 +31,21 @@ pub async fn auth<B>(
         return Err(StatusCode::UNAUTHORIZED);
     };
 
-    if let Ok(conn) = app_state.db_pool.get().await {
-        if let Ok(row) = conn
-            .query_one(
-                "select id, name from users where token = $1",
-                &[&auth_header],
-            )
-            .await
-        {
-            let current_user = CurrentUser {
-                id: row.get(0),
-                name: row.get(1),
-            };
-            req.extensions_mut().insert(current_user);
-            Ok(next.run(req).await)
-        } else {
-            Err(StatusCode::UNAUTHORIZED)
-        }
+    if let Ok(user) = sqlx::query_as!(
+        User,
+        "SELECT id, name FROM users WHERE token = $1",
+        auth_header
+    )
+    .fetch_one(&app_state.db_pool)
+    .await
+    {
+        let current_user = CurrentUser {
+            id: user.id,
+            name: user.name,
+        };
+        req.extensions_mut().insert(current_user);
+        Ok(next.run(req).await)
     } else {
-        Err(StatusCode::INTERNAL_SERVER_ERROR)
+        Err(StatusCode::UNAUTHORIZED)
     }
 }

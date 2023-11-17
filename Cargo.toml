@@ -7,19 +7,18 @@ default-run = "rust_rest"
 [dependencies]
 axum = "0.6"
 axum-on-rails = { path = "./axum-on-rails" }
-bb8 = "0.8"
-bb8-postgres = "0.8"
 clap = "4.4"
 dotenvy = "0.15"
 rand = "0.8"
 refinery = { version = "0.8", features = ["tokio-postgres"]}
 serde = { version = "1.0", features = ["derive"] } 
+sqlx = { version = "0.7", features = [ "runtime-tokio", "tls-rustls", "postgres", "macros", "uuid", "migrate", "chrono" ] }
 tokio = { version = "1.33", features = ["full"] }
-tokio-postgres = "0.7"
 tower-http = { version = "0.4", features = ["full"] }
 tracing = "0.1"
 tracing-panic = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+uuid = { version = "1.5", features = ["serde"] }
 validator = { version = "0.16", features = ["derive"] }
 
 [dev-dependencies]

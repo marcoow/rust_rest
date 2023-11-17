@@ -1,50 +1,50 @@
-use crate::ConnectionPool;
 use axum::{
     body::Body,
     http::{Method, Request},
     response::Response,
     Router,
 };
-use core::str::FromStr;
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
+use sqlx::postgres::{PgConnectOptions, PgConnection};
+use sqlx::{ConnectOptions, Connection, Executor, PgPool};
 use std::collections::HashMap;
 use std::env;
-use tokio_postgres::{config::Config, NoTls};
 use tower::ServiceExt;
+use url::Url;
 
 pub struct TestContext {
     pub app: Router,
-    pub pool: ConnectionPool,
-    db_config: Config,
+    pub db_pool: PgPool,
+    db_config: PgConnectOptions,
 }
 
 pub fn build_test_context(
     router: Router,
-    pool: ConnectionPool,
-    test_db_config: Config,
+    db_pool: PgPool,
+    test_db_config: PgConnectOptions,
 ) -> TestContext {
     TestContext {
         app: router,
-        pool,
+        db_pool,
         db_config: test_db_config,
     }
 }
 
-pub async fn prepare_db() -> Config {
+pub async fn prepare_db() -> PgConnectOptions {
     dotenvy::from_filename(".env.test").ok();
-    let db_url = env::var("DATABASE_URL").expect("No DATABASE_URL set – cannot run tests!");
-    let config = Config::from_str(&db_url).unwrap();
-    let db_name = config.get_dbname().unwrap();
+    let db_url = Url::parse(
+        env::var("DATABASE_URL")
+            .expect("No DATABASE_URL set – cannot run tests!")
+            .as_str(),
+    )
+    .expect("Invalid DATABASE_URL!");
+    let config: PgConnectOptions =
+        ConnectOptions::from_url(&db_url).expect("Invalid DATABASE_URL!");
+    let db_name = config.get_database().unwrap();
 
-    let mut root_db_config = config.clone();
-    root_db_config.dbname("postgres");
-    let (client, connection) = root_db_config.connect(NoTls).await.unwrap();
-    tokio::spawn(async move {
-        if let Err(e) = connection.await {
-            eprintln!("connection error: {}", e);
-        }
-    });
+    let root_db_config = config.clone().database("postgres");
+    let mut connection: PgConnection = Connection::connect_with(&root_db_config).await.unwrap();
 
     let test_db_suffix: String = thread_rng()
         .sample_iter(&Alphanumeric)
@@ -53,43 +53,23 @@ pub async fn prepare_db() -> Config {
         .collect();
     let test_db_name = format!("{}_{}", db_name, test_db_suffix).to_lowercase();
 
-    client
-        .execute(
-            &format!("create database {} template {}", test_db_name, db_name),
-            &[],
-        )
-        .await
-        .unwrap();
+    let query = format!("CREATE DATABASE {} TEMPLATE {}", test_db_name, db_name);
+    connection.execute(query.as_str()).await.unwrap();
 
-    let mut test_db_config = config.clone();
-    test_db_config.dbname(&test_db_name);
-
-    test_db_config
+    config.clone().database(&test_db_name)
 }
 
 pub async fn teardown(context: TestContext) {
     drop(context.app);
-    drop(context.pool);
-    let db_name = context.db_config.get_dbname().unwrap();
+    drop(context.db_pool);
+    let db_name = context.db_config.get_database().unwrap();
     println!("cleaning up DB, {}", &db_name);
-    let mut root_db_config = context.db_config.clone();
-    root_db_config.dbname("postgres");
-    let (client, connection) = root_db_config.connect(NoTls).await.unwrap();
-    tokio::spawn(async move {
-        if let Err(e) = connection.await {
-            eprintln!("connection error: {}", e);
-        }
-    });
-    println!("we connection1!");
+    let root_db_config = context.db_config.clone().database("postgres");
 
-    let result = client
-        .execute(&format!("drop database if exists {}", &db_name), &[])
-        .await;
+    let mut connection: PgConnection = Connection::connect_with(&root_db_config).await.unwrap();
 
-    match result {
-        Ok(_) => println!("Dropped!"),
-        Err(e) => println!("❌ Dropping database {} failed: {:?}!", &db_name, e),
-    }
+    let query = format!("DROP DATABASE IF EXISTS {}", db_name);
+    connection.execute(query.as_str()).await.unwrap();
 }
 
 pub async fn request(

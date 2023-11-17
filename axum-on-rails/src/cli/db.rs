@@ -1,16 +1,13 @@
 use crate::cli::env::{parse_env, Environment};
 use crate::cli::ui::{log, log_per_env, LogType};
 use clap::{arg, value_parser, Command};
-use core::str::FromStr;
+use sqlx::postgres::{PgConnectOptions, PgConnection, PgPoolOptions};
+use sqlx::{migrate::Migrator, ConnectOptions, Connection, Executor};
 use std::env;
 use std::fs;
-use tokio_postgres::{config::Config, Client, NoTls};
-use tracing::error;
+use url::Url;
 
-mod embedded {
-    use refinery::embed_migrations;
-    embed_migrations!("../db/migrations");
-}
+static MIGRATOR: Migrator = sqlx::migrate!("../db/migrations");
 
 fn commands() -> Command {
     Command::new("db")
@@ -45,19 +42,19 @@ pub async fn cli() {
 
     match matches.subcommand() {
         Some(("drop", sub_matches)) => {
-            let env = parse_env(&sub_matches);
+            let env = parse_env(sub_matches);
             drop(&env).await;
         }
         Some(("create", sub_matches)) => {
-            let env = parse_env(&sub_matches);
+            let env = parse_env(sub_matches);
             create(&env).await;
         }
         Some(("migrate", sub_matches)) => {
-            let env = parse_env(&sub_matches);
+            let env = parse_env(sub_matches);
             migrate(&env).await;
         }
         Some(("reset", sub_matches)) => {
-            let env = parse_env(&sub_matches);
+            let env = parse_env(sub_matches);
             drop(&env).await;
             create(&env).await;
             migrate(&env).await;
@@ -81,13 +78,12 @@ async fn drop(env: &Environment) {
         "Dropping test database…",
     );
 
-    let db_config = get_db_config(&env);
-    let db_name = db_config.get_dbname().unwrap();
-    let root_db_client = get_root_db_client(&env).await;
+    let db_config = get_db_config(env);
+    let db_name = db_config.get_database().unwrap();
+    let mut root_connection = get_root_db_client(env).await;
 
-    let result = root_db_client
-        .execute(&format!("drop database if exists {}", &db_name), &[])
-        .await;
+    let query = format!("DROP DATABASE IF EXISTS {}", db_name);
+    let result = root_connection.execute(query.as_str()).await;
 
     match result {
         Ok(_) => log(
@@ -109,13 +105,12 @@ async fn create(env: &Environment) {
         "Creating test database…",
     );
 
-    let db_config = get_db_config(&env);
-    let db_name = db_config.get_dbname().unwrap();
-    let root_db_client = get_root_db_client(&env).await;
+    let db_config = get_db_config(env);
+    let db_name = db_config.get_database().unwrap();
+    let mut root_connection = get_root_db_client(env).await;
 
-    let result = root_db_client
-        .execute(&format!("create database {}", &db_name), &[])
-        .await;
+    let query = format!("CREATE DATABASE {}", db_name);
+    let result = root_connection.execute(query.as_str()).await;
 
     match result {
         Ok(_) => log(
@@ -137,34 +132,31 @@ async fn migrate(env: &Environment) {
         "Migrating test database…",
     );
 
-    let mut client = get_db_client(&env).await;
-
-    let report = embedded::migrations::runner()
-        .run_async(&mut client)
+    let db_config = get_db_config(env);
+    let db_pool = PgPoolOptions::new()
+        .connect_with(db_config)
         .await
-        .unwrap();
+        .expect("Could not connect to database!");
 
-    let migrations_applied = report.applied_migrations().len();
+    let result = MIGRATOR.run(&db_pool).await;
 
-    match migrations_applied {
-        0 => log(LogType::Info, "There were no pending migrations to apply."),
-        n => log(
-            LogType::Success,
-            format!("Applied {} migrations.", n).as_str(),
-        ),
+    match result {
+        Ok(_) => log(LogType::Info, "Migrated database successfully."),
+        _ => log(LogType::Error, "Running migrations failed!"),
     }
 }
 
 async fn seed() {
     log(LogType::Info, "Seeding development database…");
 
-    let mut client = get_db_client(&Environment::Development).await;
+    let mut connection = get_db_client(&Environment::Development).await;
 
     let statements = fs::read_to_string("./db/seeds.sql")
         .expect("Could not read seeds – make sure db/seeds.sql exists!");
 
-    let transaction = client.transaction().await.unwrap();
-    let result = transaction.execute(statements.as_str(), &[]).await;
+    let mut transaction = connection.begin().await.unwrap();
+    let result = transaction.execute(statements.as_str()).await;
+
     match result {
         Ok(_) => {
             let _ = transaction
@@ -177,40 +169,32 @@ async fn seed() {
     }
 }
 
-fn get_db_config(env: &Environment) -> Config {
+fn get_db_config(env: &Environment) -> PgConnectOptions {
     match env {
         Environment::Test => read_dotenv_config(".env.test"),
         Environment::Development => read_dotenv_config(".env"),
     }
 
-    let db_url = env::var("DATABASE_URL").unwrap();
-    Config::from_str(&db_url).unwrap()
+    let db_url = Url::parse(
+        env::var("DATABASE_URL")
+            .expect("No DATABASE_URL set – cannot run tests!")
+            .as_str(),
+    )
+    .expect("Invalid DATABASE_URL!");
+    ConnectOptions::from_url(&db_url).expect("Invalid DATABASE_URL!")
 }
 
-async fn get_db_client(env: &Environment) -> Client {
+async fn get_db_client(env: &Environment) -> PgConnection {
     let db_config = get_db_config(env);
-    let (client, connection) = db_config.connect(NoTls).await.unwrap();
+    let connection: PgConnection = Connection::connect_with(&db_config).await.unwrap();
 
-    tokio::spawn(async move {
-        if let Err(e) = connection.await {
-            error!("An error occured while connecting to database: {}", e);
-        }
-    });
-
-    client
+    connection
 }
 
-async fn get_root_db_client(env: &Environment) -> Client {
+async fn get_root_db_client(env: &Environment) -> PgConnection {
     let db_config = get_db_config(env);
-    let mut root_db_config = db_config.clone();
-    root_db_config.dbname("postgres");
-    let (client, connection) = root_db_config.connect(NoTls).await.unwrap();
+    let root_db_config = db_config.clone().database("postgres");
+    let connection: PgConnection = Connection::connect_with(&root_db_config).await.unwrap();
 
-    tokio::spawn(async move {
-        if let Err(e) = connection.await {
-            error!("An error occured while connecting to database: {}", e);
-        }
-    });
-
-    client
+    connection
 }

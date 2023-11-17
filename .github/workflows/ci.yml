@@ -11,7 +11,22 @@ jobs:
   cargo_check:
     name: "Cargo Check"
     runs-on: ubuntu-latest
-    
+
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_DB: rust_rest
+          POSTGRES_USER: rust_rest
+          POSTGRES_PASSWORD: rust_rest
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
     steps:
     - uses: actions/checkout@v3
     
@@ -19,7 +34,10 @@ jobs:
       uses: actions-rs/toolchain@v1.0.3
       with:
         toolchain: stable
-    
+
+    - name: migrate
+      run: cargo db reset
+
     - name: cargo check
       uses: actions-rs/cargo@v1.0.1
       with:
@@ -47,7 +65,22 @@ jobs:
   clippy:
     name: "Clippy"
     runs-on: ubuntu-latest
-    
+
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_DB: rust_rest
+          POSTGRES_USER: rust_rest
+          POSTGRES_PASSWORD: rust_rest
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
     steps:
     - uses: actions/checkout@v3
     
@@ -56,7 +89,10 @@ jobs:
       with:
         toolchain: stable
         components: clippy
-    
+
+    - name: migrate
+      run: cargo db reset
+
     - name: clippy
       uses: actions-rs/cargo@v1.0.1
       with:
@@ -69,6 +105,19 @@ jobs:
 
     services:
       postgres:
+        image: postgres
+        env:
+          POSTGRES_DB: rust_rest
+          POSTGRES_USER: rust_rest
+          POSTGRES_PASSWORD: rust_rest
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      postgres_test:
         image: postgres
         env:
           POSTGRES_DB: rust_rest_test
@@ -92,7 +141,9 @@ jobs:
         components: clippy
 
     - name: migrate
-      run: cargo db reset -e test
+      run: |
+        cargo db reset
+        cargo db reset -e test
 
     - name: test
       run: cargo test
