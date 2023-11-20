@@ -1,13 +1,16 @@
 use crate::cli::env::{parse_env, Environment};
 use crate::cli::ui::{log, log_per_env, LogType};
 use clap::{arg, value_parser, Command};
-use sqlx::postgres::{PgConnectOptions, PgConnection, PgPoolOptions};
-use sqlx::{migrate::Migrator, ConnectOptions, Connection, Executor};
+use sqlx::postgres::{PgConnectOptions, PgConnection};
+use sqlx::{
+    migrate::{Migrate, Migrator},
+    ConnectOptions, Connection, Executor,
+};
+use std::collections::HashMap;
 use std::env;
 use std::fs;
+use std::path::Path;
 use url::Url;
-
-static MIGRATOR: Migrator = sqlx::migrate!("../db/migrations");
 
 fn commands() -> Command {
     Command::new("db")
@@ -133,17 +136,47 @@ async fn migrate(env: &Environment) {
     );
 
     let db_config = get_db_config(env);
-    let db_pool = PgPoolOptions::new()
-        .connect_with(db_config)
+    let migrator = Migrator::new(Path::new("db/migrations")).await.unwrap();
+    let mut connection = db_config.connect().await.unwrap();
+
+    connection.ensure_migrations_table().await.unwrap();
+
+    let applied_migrations: HashMap<_, _> = connection
+        .list_applied_migrations()
         .await
-        .expect("Could not connect to database!");
+        .unwrap()
+        .into_iter()
+        .map(|m| (m.version, m))
+        .collect();
 
-    let result = MIGRATOR.run(&db_pool).await;
-
-    match result {
-        Ok(_) => log(LogType::Info, "Migrated database successfully."),
-        _ => log(LogType::Error, "Running migrations failed!"),
+    let mut applied = 0;
+    for migration in migrator.iter() {
+        if applied_migrations.get(&migration.version).is_none() {
+            match connection.apply(migration).await {
+                Ok(_) => log(
+                    LogType::Info,
+                    format!("Migration {} applied.", migration.version).as_str(),
+                ),
+                Err(_) => {
+                    log(
+                        LogType::Error,
+                        format!("Coulnd't apply migration {}!", migration.version).as_str(),
+                    );
+                    return;
+                }
+            }
+            applied += 1;
+        }
     }
+
+    log(
+        LogType::Success,
+        format!(
+            "Migrated database successfully ({} migrations applied).",
+            applied
+        )
+        .as_str(),
+    );
 }
 
 async fn seed() {
