@@ -6,3 +6,4 @@ mod util;
 pub use util::get_env;
 pub use util::load_config;
 pub use util::Environment;
+pub use util::get_log_level;

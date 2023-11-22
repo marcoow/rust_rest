@@ -1,9 +1,8 @@
 use axum::http::StatusCode;
-use axum_on_rails::load_config;
+use axum_on_rails::{get_log_level, load_config};
 use dotenvy::dotenv;
-use std::env;
 use std::net::SocketAddr;
-use tracing::{debug, Level};
+use tracing::debug;
 use tracing_panic::panic_hook;
 use tracing_subscriber::FmtSubscriber;
 
@@ -46,21 +45,4 @@ where
     E: std::error::Error,
 {
     (StatusCode::INTERNAL_SERVER_ERROR, err.to_string())
-}
-
-fn get_log_level() -> Level {
-    match env::var("RUST_LOG") {
-        Ok(val) => match val.to_lowercase().as_str() {
-            "trace" => Level::TRACE,
-            "debug" => Level::DEBUG,
-            "info" => Level::INFO,
-            "warn" => Level::WARN,
-            "error" => Level::ERROR,
-            unknown => {
-                eprintln!(r#"Unknown log level: "{}"!"#, unknown);
-                std::process::exit(1)
-            }
-        },
-        Err(_) => Level::INFO,
-    }
 }
