@@ -1,7 +1,6 @@
 use axum::http::StatusCode;
-use axum_on_rails::{get_log_level, load_config};
+use axum_on_rails::{get_bind_addr, get_log_level, load_config};
 use dotenvy::dotenv;
-use std::net::SocketAddr;
 use tracing::info;
 use tracing_panic::panic_hook;
 use tracing_subscriber::FmtSubscriber;
@@ -32,7 +31,7 @@ async fn main() {
     let app_state = state::app_state(config).await;
     let app = routes::routes(app_state);
 
-    let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
+    let addr = get_bind_addr();
     info!("Listening on {}", addr);
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
