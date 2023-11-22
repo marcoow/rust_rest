@@ -1,4 +1,5 @@
 use axum::http::StatusCode;
+use axum_on_rails::load_config;
 use dotenvy::dotenv;
 use std::env;
 use std::net::SocketAddr;
@@ -6,6 +7,7 @@ use tracing::{debug, Level};
 use tracing_panic::panic_hook;
 use tracing_subscriber::FmtSubscriber;
 
+mod config;
 mod controllers;
 mod entities;
 mod middlewares;
@@ -26,7 +28,9 @@ async fn main() {
 
     std::panic::set_hook(Box::new(panic_hook));
 
-    let app_state = state::app_state().await;
+    let config = load_config();
+
+    let app_state = state::app_state(config).await;
     let app = routes::routes(app_state);
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
