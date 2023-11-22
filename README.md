@@ -65,6 +65,13 @@ cargo generate migration <migration-name>
 cargo run
 ```
 
+The log level can be set via the `RUST_LOG` env var (set one of `trace`,
+`debug`, `info` (default), `warn`, `error`), e.g.:
+
+```bash
+RUST_LOG=trace cargo run
+```
+
 ### Making requests with `curl`
 
 #### Creating a new task

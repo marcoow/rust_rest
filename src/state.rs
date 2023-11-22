@@ -1,4 +1,3 @@
-use dotenvy::dotenv;
 use sqlx::postgres::{PgPool, PgPoolOptions};
 use std::env;
 
@@ -8,7 +7,6 @@ pub struct AppState {
 }
 
 pub async fn app_state() -> AppState {
-    dotenv().ok();
     let db_url = env::var("DATABASE_URL").expect("No DATABASE_URL set – cannot start server!");
 
     let db_pool = PgPoolOptions::new()
