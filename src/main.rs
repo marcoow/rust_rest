@@ -1,9 +1,6 @@
 use axum::http::StatusCode;
+use axum_on_rails::load_config;
 use dotenvy::dotenv;
-use figment::{
-    providers::{Format, Toml},
-    Figment,
-};
 use std::env;
 use std::net::SocketAddr;
 use tracing::{debug, Level};
@@ -20,12 +17,6 @@ mod state;
 #[cfg(test)]
 mod test;
 
-enum Environment {
-    Development,
-    Production,
-    Test,
-}
-
 #[tokio::main]
 async fn main() {
     dotenv().ok();
@@ -37,9 +28,9 @@ async fn main() {
 
     std::panic::set_hook(Box::new(panic_hook));
 
-    let _config = load_config();
+    let config = load_config();
 
-    let app_state = state::app_state().await;
+    let app_state = state::app_state(config).await;
     let app = routes::routes(app_state);
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
@@ -72,39 +63,4 @@ fn get_log_level() -> Level {
         },
         Err(_) => Level::INFO,
     }
-}
-
-fn get_env() -> Environment {
-    // TODO: come up with a better name for the env var!
-    match env::var("APP_ENVIRONMENT") {
-        Ok(val) => match val.to_lowercase().as_str() {
-            "dev" | "development" => Environment::Development,
-            "prod" | "production" => Environment::Production,
-            "test" => Environment::Test,
-            unknown => {
-                eprintln!(r#"Unknown environment: "{}"!"#, unknown);
-                std::process::exit(1)
-            }
-        },
-        Err(_) => Environment::Development,
-    }
-}
-
-fn load_config() -> config::Config {
-    let environment = get_env();
-    let env_config_file = match environment {
-        Environment::Development => "development.toml",
-        Environment::Production => "production.toml",
-        Environment::Test => "test.toml",
-    };
-
-    let config: config::Config = Figment::new()
-        .merge(Toml::file("config/app.toml"))
-        .merge(Toml::file(format!(
-            "config/environments/{}",
-            env_config_file
-        )))
-        .extract()
-        .expect("Could not read configuration!");
-    config
 }
