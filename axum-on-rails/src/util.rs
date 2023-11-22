@@ -3,7 +3,7 @@ use figment::{
     Figment,
 };
 use serde::de::Deserialize;
-use std::env;
+use std::{env, net::SocketAddr, str::FromStr};
 use tracing::Level;
 
 pub enum Environment {
@@ -65,4 +65,19 @@ pub fn get_log_level() -> Level {
         },
         Err(_) => Level::INFO,
     }
+}
+
+pub fn get_bind_addr() -> SocketAddr {
+    // TODO: come up with a better name for the env var!
+    let iface = match env::var("APP_BIND_IFACE") {
+        Ok(val) => val,
+        Err(_) => String::from("127.0.0.1"),
+    };
+    let port = match env::var("APP_PORT") {
+        Ok(val) => val,
+        Err(_) => String::from("3000"),
+    };
+
+    SocketAddr::from_str(format!("{}:{}", iface, port).as_str())
+        .expect(format!(r#"Could not parse bind addr "{}:{}"!"#, iface, port).as_str())
 }
