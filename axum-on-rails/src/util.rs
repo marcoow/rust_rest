@@ -2,8 +2,8 @@ use figment::{
     providers::{Format, Toml},
     Figment,
 };
-use std::env;
 use serde::de::Deserialize;
+use std::env;
 use tracing::Level;
 
 pub enum Environment {
@@ -28,7 +28,10 @@ pub fn get_env() -> Environment {
     }
 }
 
-pub fn load_config<'a, T>() -> T where T: Deserialize<'a> {
+pub fn load_config<'a, T>() -> T
+where
+    T: Deserialize<'a>,
+{
     let environment = get_env();
     let env_config_file = match environment {
         Environment::Development => "development.toml",
@@ -63,4 +66,3 @@ pub fn get_log_level() -> Level {
         Err(_) => Level::INFO,
     }
 }
-
