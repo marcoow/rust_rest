@@ -1,4 +1,5 @@
 use axum::http::StatusCode;
+use dotenvy::dotenv;
 use std::net::SocketAddr;
 use tracing::{debug, Level};
 use tracing_panic::panic_hook;
@@ -15,6 +16,8 @@ mod test;
 
 #[tokio::main]
 async fn main() {
+    dotenv().ok();
+
     let subscriber = FmtSubscriber::builder()
         .with_max_level(Level::TRACE)
         .finish();
