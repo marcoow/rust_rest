@@ -5,6 +5,7 @@ edition = "2021"
 default-run = "rust_rest"
 
 [dependencies]
+anyhow = "1.0"
 axum = "0.6"
 axum-on-rails = { path = "./axum-on-rails" }
 clap = "4.4"
