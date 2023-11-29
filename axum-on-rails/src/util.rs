@@ -3,28 +3,48 @@ use figment::{
     Figment,
 };
 use serde::de::Deserialize;
+use std::fmt::{Display, Formatter, Result};
 use std::{env, net::SocketAddr, str::FromStr};
+use tracing::info;
 use tracing_panic::panic_hook;
 use tracing_subscriber::{filter::EnvFilter, fmt, layer::SubscriberExt, util::SubscriberInitExt};
 
+#[derive(Debug)]
 pub enum Environment {
     Development,
     Production,
     Test,
 }
 
+impl Display for Environment {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        match self {
+            Environment::Development => write!(f, "development"),
+            Environment::Production => write!(f, "production"),
+            Environment::Test => write!(f, "test"),
+        }
+    }
+}
+
 pub fn get_env() -> Environment {
     // TODO: come up with a better name for the env var!
     match env::var("APP_ENVIRONMENT") {
-        Ok(val) => match val.to_lowercase().as_str() {
-            "dev" | "development" => Environment::Development,
-            "prod" | "production" => Environment::Production,
-            "test" => Environment::Test,
-            unknown => {
-                panic!(r#"Unknown environment: "{}"!"#, unknown);
-            }
-        },
-        Err(_) => Environment::Development,
+        Ok(val) => {
+            let env = match val.to_lowercase().as_str() {
+                "dev" | "development" => Environment::Development,
+                "prod" | "production" => Environment::Production,
+                "test" => Environment::Test,
+                unknown => {
+                    panic!(r#"Unknown environment: "{}"!"#, unknown);
+                }
+            };
+            info!("Setting environment from APP_ENVIRONMENT: {}", env);
+            env
+        }
+        Err(_) => {
+            info!("Defaulting to environment: development");
+            Environment::Development
+        }
     }
 }
 
