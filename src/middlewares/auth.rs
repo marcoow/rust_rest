@@ -33,7 +33,7 @@ pub async fn auth<B>(
         return Err(StatusCode::UNAUTHORIZED);
     };
 
-    if let Ok(user) = sqlx::query_as!(
+    match sqlx::query_as!(
         User,
         "SELECT id, name FROM users WHERE token = $1",
         auth_header
@@ -41,14 +41,18 @@ pub async fn auth<B>(
     .fetch_one(&app_state.db_pool)
     .await
     {
-        let current_user = CurrentUser {
-            id: user.id,
-            name: user.name,
-        };
-        req.extensions_mut().insert(current_user);
-        Ok(next.run(req).await)
-    } else {
-        debug!(r#"User unauthorized – no user for token "{}""#, auth_header);
-        Err(StatusCode::UNAUTHORIZED)
+        Ok(user) => {
+            let current_user = CurrentUser {
+                id: user.id,
+                name: user.name,
+            };
+            req.extensions_mut().insert(current_user);
+            Ok(next.run(req).await)
+        }
+        Err(sqlx::Error::RowNotFound) => {
+            debug!(r#"User unauthorized – no user for token "{}""#, auth_header);
+            Err(StatusCode::UNAUTHORIZED)
+        }
+        _ => Err(StatusCode::INTERNAL_SERVER_ERROR),
     }
 }
