@@ -15,9 +15,19 @@ mod test;
 
 #[tokio::main]
 async fn main() {
-    dotenv().ok();
-
     init_tracing();
+
+    if let Err(e) = run().await {
+        tracing::error!(
+            error.msg = %e,
+            error.error_chain = ?e,
+            "Shutting down due to error"
+        )
+    }
+}
+
+async fn run() -> anyhow::Result<()> {
+    dotenv().ok();
 
     let config = load_config();
 
@@ -28,8 +38,9 @@ async fn main() {
     info!("Listening on {}", addr);
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
-        .await
-        .unwrap();
+        .await?;
+
+    Ok(())
 }
 
 pub fn internal_error<E>(err: E) -> (StatusCode, String)
