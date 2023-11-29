@@ -6,6 +6,7 @@ use axum::{
     middleware::Next,
     response::Response,
 };
+use tracing::debug;
 use uuid::Uuid;
 
 #[allow(dead_code)]
@@ -28,6 +29,7 @@ pub async fn auth<B>(
     let auth_header = if let Some(auth_header) = auth_header {
         auth_header
     } else {
+        debug!("User unauthorized – header missing");
         return Err(StatusCode::UNAUTHORIZED);
     };
 
@@ -46,6 +48,7 @@ pub async fn auth<B>(
         req.extensions_mut().insert(current_user);
         Ok(next.run(req).await)
     } else {
+        debug!(r#"User unauthorized – no user for token "{}""#, auth_header);
         Err(StatusCode::UNAUTHORIZED)
     }
 }
