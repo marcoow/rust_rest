@@ -4,7 +4,8 @@ use figment::{
 };
 use serde::de::Deserialize;
 use std::{env, net::SocketAddr, str::FromStr};
-use tracing::Level;
+use tracing_panic::panic_hook;
+use tracing_subscriber::{filter::EnvFilter, fmt, layer::SubscriberExt, util::SubscriberInitExt};
 
 pub enum Environment {
     Development,
@@ -50,23 +51,6 @@ where
     config
 }
 
-pub fn get_log_level() -> Level {
-    match env::var("RUST_LOG") {
-        Ok(val) => match val.to_lowercase().as_str() {
-            "trace" => Level::TRACE,
-            "debug" => Level::DEBUG,
-            "info" => Level::INFO,
-            "warn" => Level::WARN,
-            "error" => Level::ERROR,
-            unknown => {
-                eprintln!(r#"Unknown log level: "{}"!"#, unknown);
-                std::process::exit(1)
-            }
-        },
-        Err(_) => Level::INFO,
-    }
-}
-
 pub fn get_bind_addr() -> SocketAddr {
     // TODO: come up with a better name for the env var!
     let iface = match env::var("APP_BIND_IFACE") {
@@ -80,4 +64,16 @@ pub fn get_bind_addr() -> SocketAddr {
 
     SocketAddr::from_str(format!("{}:{}", iface, port).as_str())
         .expect(format!(r#"Could not parse bind addr "{}:{}"!"#, iface, port).as_str())
+}
+
+pub fn init_tracing() {
+    let filter = EnvFilter::try_from_default_env()
+        .or_else(|_| EnvFilter::try_new("info"))
+        .unwrap();
+    tracing_subscriber::registry()
+        .with(fmt::layer())
+        .with(filter)
+        .init();
+
+    std::panic::set_hook(Box::new(panic_hook));
 }
