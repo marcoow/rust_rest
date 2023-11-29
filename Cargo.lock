@@ -239,6 +239,7 @@ dependencies = [
  "tower",
  "tower-http",
  "tracing",
+ "tracing-panic",
  "tracing-subscriber",
  "url",
  "validator",
@@ -1586,8 +1587,6 @@ dependencies = [
  "tower",
  "tower-http",
  "tracing",
- "tracing-panic",
- "tracing-subscriber",
  "uuid",
  "validator",
 ]

@@ -16,7 +16,8 @@ sqlx = { version = "0.7", features = [ "runtime-tokio", "tls-rustls", "postgres"
 tower = { version = "0.4", features = ["util"] }
 tower-http = { version = "0.4", features = ["full"] }
 tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tracing-panic = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "registry", "fmt"] }
 url = "2.4"
 validator = { version = "0.16", features = ["derive"] }
 
