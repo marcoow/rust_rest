@@ -21,8 +21,7 @@ pub fn get_env() -> Environment {
             "prod" | "production" => Environment::Production,
             "test" => Environment::Test,
             unknown => {
-                eprintln!(r#"Unknown environment: "{}"!"#, unknown);
-                std::process::exit(1)
+                panic!(r#"Unknown environment: "{}"!"#, unknown);
             }
         },
         Err(_) => Environment::Development,
@@ -63,7 +62,7 @@ pub fn get_bind_addr() -> SocketAddr {
     };
 
     SocketAddr::from_str(format!("{}:{}", iface, port).as_str())
-        .expect(format!(r#"Could not parse bind addr "{}:{}"!"#, iface, port).as_str())
+        .unwrap_or_else(|_| panic!(r#"Could not parse bind addr "{}:{}"!"#, iface, port))
 }
 
 pub fn init_tracing() {
