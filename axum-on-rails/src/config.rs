@@ -7,6 +7,11 @@ pub struct ServerConfig {
   pub port: i32,
 }
 
+#[derive(Deserialize, Clone)]
+pub struct DatabaseConfig {
+  pub url: String,
+}
+
 impl Default for ServerConfig {
     fn default() -> Self {
         ServerConfig {

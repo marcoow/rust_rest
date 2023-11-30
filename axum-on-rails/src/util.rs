@@ -66,6 +66,7 @@ where
             env_config_file
         )))
         .merge(Env::prefixed("SERVER_").map(|k| format!("server.{}", k.as_str()).into()))
+        .merge(Env::prefixed("DATABASE_").map(|k| format!("database.{}", k.as_str()).into()))
         .extract()
         .expect("Could not read configuration!");
     config
