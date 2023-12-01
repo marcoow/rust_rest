@@ -1,3 +1,4 @@
 [alias]
-db = ["run", "--bin", "db"]
-generate = ["run", "--bin", "generate"]
+db = ["run", "--package", "rust_rest_cli", "--bin", "db"]
+generate = ["run", "--package", "rust_rest_cli", "--bin", "generate"]
+test-web = ["test", "--package", "rust_rest_web"]

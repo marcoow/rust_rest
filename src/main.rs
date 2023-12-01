@@ -1,17 +1,5 @@
-use axum::http::StatusCode;
-use axum_on_rails::{get_bind_addr, init_tracing, load_config};
-use dotenvy::dotenv;
-use tracing::info;
-
-mod config;
-mod controllers;
-mod entities;
-mod middlewares;
-mod routes;
-mod state;
-
-#[cfg(test)]
-mod test;
+use axum_on_rails::init_tracing;
+use rust_rest_web::run;
 
 #[tokio::main]
 async fn main() {
@@ -24,28 +12,4 @@ async fn main() {
             "Shutting down due to error"
         )
     }
-}
-
-async fn run() -> anyhow::Result<()> {
-    dotenv().ok();
-
-    let config = load_config();
-
-    let app_state = state::app_state(config).await;
-    let app = routes::routes(app_state);
-
-    let addr = get_bind_addr();
-    info!("Listening on {}", addr);
-    axum::Server::bind(&addr)
-        .serve(app.into_make_service())
-        .await?;
-
-    Ok(())
-}
-
-pub fn internal_error<E>(err: E) -> (StatusCode, String)
-where
-    E: std::error::Error,
-{
-    (StatusCode::INTERNAL_SERVER_ERROR, err.to_string())
 }
