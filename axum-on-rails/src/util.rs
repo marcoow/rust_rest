@@ -1,10 +1,10 @@
 use figment::{
-    providers::{Format, Toml, Env},
+    providers::{Env, Format, Toml},
     Figment,
 };
 use serde::de::Deserialize;
-use std::fmt::{Display, Formatter, Result};
 use std::env;
+use std::fmt::{Display, Formatter, Result};
 use tracing::info;
 use tracing_panic::panic_hook;
 use tracing_subscriber::{filter::EnvFilter, fmt, layer::SubscriberExt, util::SubscriberInitExt};

@@ -7,10 +7,10 @@ use sqlx::{
     ConnectOptions, Connection, Executor,
 };
 use std::collections::HashMap;
-use std::env;
 use std::fs;
 use std::path::Path;
 use url::Url;
+use crate::config::DatabaseConfig;
 
 fn commands() -> Command {
     Command::new("db")
@@ -40,40 +40,36 @@ fn commands() -> Command {
         .subcommand(Command::new("seed").about("Seed the database"))
 }
 
-pub async fn cli() {
+pub async fn cli(config: &DatabaseConfig) {
     let matches = commands().get_matches();
 
     match matches.subcommand() {
         Some(("drop", sub_matches)) => {
             let env = parse_env(sub_matches);
-            drop(&env).await;
+            drop(&env, config).await;
         }
         Some(("create", sub_matches)) => {
             let env = parse_env(sub_matches);
-            create(&env).await;
+            create(&env, config).await;
         }
         Some(("migrate", sub_matches)) => {
             let env = parse_env(sub_matches);
-            migrate(&env).await;
+            migrate(&env, config).await;
         }
         Some(("reset", sub_matches)) => {
             let env = parse_env(sub_matches);
-            drop(&env).await;
-            create(&env).await;
-            migrate(&env).await;
+            drop(&env, config).await;
+            create(&env, config).await;
+            migrate(&env, config).await;
         }
         Some(("seed", _sub_matches)) => {
-            seed().await;
+            seed(config).await;
         }
         _ => unreachable!(),
     }
 }
 
-fn read_dotenv_config(file: &str) {
-    dotenvy::from_filename(file).ok();
-}
-
-async fn drop(env: &Environment) {
+async fn drop(env: &Environment, config: &DatabaseConfig) {
     log_per_env(
         env,
         LogType::Info,
@@ -81,9 +77,9 @@ async fn drop(env: &Environment) {
         "Dropping test database…",
     );
 
-    let db_config = get_db_config(env);
+    let db_config = get_db_config(config);
     let db_name = db_config.get_database().unwrap();
-    let mut root_connection = get_root_db_client(env).await;
+    let mut root_connection = get_root_db_client(config).await;
 
     let query = format!("DROP DATABASE IF EXISTS {}", db_name);
     let result = root_connection.execute(query.as_str()).await;
@@ -100,7 +96,7 @@ async fn drop(env: &Environment) {
     }
 }
 
-async fn create(env: &Environment) {
+async fn create(env: &Environment, config: &DatabaseConfig) {
     log_per_env(
         env,
         LogType::Info,
@@ -108,9 +104,9 @@ async fn create(env: &Environment) {
         "Creating test database…",
     );
 
-    let db_config = get_db_config(env);
+    let db_config = get_db_config(config);
     let db_name = db_config.get_database().unwrap();
-    let mut root_connection = get_root_db_client(env).await;
+    let mut root_connection = get_root_db_client(config).await;
 
     let query = format!("CREATE DATABASE {}", db_name);
     let result = root_connection.execute(query.as_str()).await;
@@ -127,7 +123,7 @@ async fn create(env: &Environment) {
     }
 }
 
-async fn migrate(env: &Environment) {
+async fn migrate(env: &Environment, config: &DatabaseConfig) {
     log_per_env(
         env,
         LogType::Info,
@@ -135,7 +131,7 @@ async fn migrate(env: &Environment) {
         "Migrating test database…",
     );
 
-    let db_config = get_db_config(env);
+    let db_config = get_db_config(config);
     let migrator = Migrator::new(Path::new("db/migrations")).await.unwrap();
     let mut connection = db_config.connect().await.unwrap();
 
@@ -179,10 +175,10 @@ async fn migrate(env: &Environment) {
     );
 }
 
-async fn seed() {
+async fn seed(config: &DatabaseConfig) {
     log(LogType::Info, "Seeding development database…");
 
-    let mut connection = get_db_client(&Environment::Development).await;
+    let mut connection = get_db_client(config).await;
 
     let statements = fs::read_to_string("./db/seeds.sql")
         .expect("Could not read seeds – make sure db/seeds.sql exists!");
@@ -202,30 +198,20 @@ async fn seed() {
     }
 }
 
-fn get_db_config(env: &Environment) -> PgConnectOptions {
-    match env {
-        Environment::Test => read_dotenv_config(".env.test"),
-        Environment::Development => read_dotenv_config(".env"),
-    }
-
-    let db_url = Url::parse(
-        env::var("DATABASE_URL")
-            .expect("No DATABASE_URL set – cannot run tests!")
-            .as_str(),
-    )
-    .expect("Invalid DATABASE_URL!");
+fn get_db_config(config: &DatabaseConfig) -> PgConnectOptions {
+    let db_url = Url::parse(&config.url).expect("Invalid DATABASE_URL!");
     ConnectOptions::from_url(&db_url).expect("Invalid DATABASE_URL!")
 }
 
-async fn get_db_client(env: &Environment) -> PgConnection {
-    let db_config = get_db_config(env);
+async fn get_db_client(config: &DatabaseConfig) -> PgConnection {
+    let db_config = get_db_config(config);
     let connection: PgConnection = Connection::connect_with(&db_config).await.unwrap();
 
     connection
 }
 
-async fn get_root_db_client(env: &Environment) -> PgConnection {
-    let db_config = get_db_config(env);
+async fn get_root_db_client(config: &DatabaseConfig) -> PgConnection {
+    let db_config = get_db_config(config);
     let root_db_config = db_config.clone().database("postgres");
     let connection: PgConnection = Connection::connect_with(&root_db_config).await.unwrap();
 

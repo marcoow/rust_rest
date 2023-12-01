@@ -1,3 +1,4 @@
+use crate::config::Config;
 use crate::routes::routes;
 use crate::state::AppState;
 use axum_on_rails::{
@@ -7,9 +8,11 @@ use axum_on_rails::{
 use sqlx::postgres::PgPoolOptions;
 
 pub async fn setup() -> TestContext {
-    let config = load_config();
+    dotenvy::from_filename(".env.test").ok();
 
-    let db_config = prepare_db().await;
+    let config: Config = load_config();
+
+    let db_config = prepare_db(&config.database).await;
     let db_pool = PgPoolOptions::new()
         .connect_with(db_config.clone())
         .await

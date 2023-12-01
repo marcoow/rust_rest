@@ -1,6 +1,8 @@
-use axum_on_rails::cli::db::cli;
+use axum_on_rails::{load_config, cli::db::cli};
+use crate::config::Config;
 
 #[tokio::main]
 async fn main() {
-    cli().await;
+    let config: Config = load_config();
+    cli(&config).await;
 }

@@ -1,3 +1,4 @@
+use crate::config::DatabaseConfig;
 use axum::{
     body::Body,
     http::{Method, Request},
@@ -9,7 +10,6 @@ use rand::{thread_rng, Rng};
 use sqlx::postgres::{PgConnectOptions, PgConnection};
 use sqlx::{ConnectOptions, Connection, Executor, PgPool};
 use std::collections::HashMap;
-use std::env;
 use tower::ServiceExt;
 use url::Url;
 
@@ -31,14 +31,8 @@ pub fn build_test_context(
     }
 }
 
-pub async fn prepare_db() -> PgConnectOptions {
-    dotenvy::from_filename(".env.test").ok();
-    let db_url = Url::parse(
-        env::var("DATABASE_URL")
-            .expect("No DATABASE_URL set – cannot run tests!")
-            .as_str(),
-    )
-    .expect("Invalid DATABASE_URL!");
+pub async fn prepare_db(config: &DatabaseConfig) -> PgConnectOptions {
+    let db_url = Url::parse(&config.url).expect("Invalid DATABASE_URL!");
     let config: PgConnectOptions =
         ConnectOptions::from_url(&db_url).expect("Invalid DATABASE_URL!");
     let db_name = config.get_database().unwrap();
