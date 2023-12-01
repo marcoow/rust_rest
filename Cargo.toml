@@ -1,15 +1,3 @@
 [workspace]
-members = [".", "cli", "config", "db", "web"]
-
-[package]
-name = "rust_rest"
-version = "0.1.0"
-edition = "2021"
-default-run = "rust_rest"
-publish = false
-
-[dependencies]
-axum-on-rails = { path = "./axum-on-rails" }
-rust_rest_web = { path = "./web" }
-tokio = { version = "1.33", features = ["full"] }
-tracing = "0.1"
+members = ["app", "cli", "config", "db", "web"]
+resolver = "2"

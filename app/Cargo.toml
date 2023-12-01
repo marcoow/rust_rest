@@ -1,0 +1,12 @@
+[package]
+name = "rust_rest"
+version = "0.1.0"
+edition = "2021"
+publish = false
+default-run = "rust_rest"
+
+[dependencies]
+axum-on-rails = { path = "../axum-on-rails" }
+rust_rest_web = { path = "../web" }
+tokio = { version = "1.33", features = ["full"] }
+tracing = "0.1"
