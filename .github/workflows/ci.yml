@@ -29,11 +29,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    
-    - name: rust-toolchain
-      uses: actions-rs/toolchain@v1.0.3
-      with:
-        toolchain: stable
+    - uses: actions-rust-lang/setup-rust-toolchain@v1
 
     - name: migrate
       run: cargo db reset
@@ -49,11 +45,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-
-    - name: rust-toolchain
-      uses: actions-rs/toolchain@v1.0.3
+    - uses: actions-rust-lang/setup-rust-toolchain@v1
       with:
-        toolchain: stable
         components: rustfmt
 
     - name: fmt
@@ -83,11 +76,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    
-    - name: rust-toolchain
-      uses: actions-rs/toolchain@v1.0.3
+    - uses: actions-rust-lang/setup-rust-toolchain@v1
       with:
-        toolchain: stable
         components: clippy
 
     - name: migrate
@@ -133,12 +123,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-
-    - name: rust-toolchain
-      uses: actions-rs/toolchain@v1.0.3
-      with:
-        toolchain: stable
-        components: clippy
+    - uses: actions-rust-lang/setup-rust-toolchain@v1
 
     - name: migrate
       run: |
