@@ -1,5 +1,5 @@
-use crate::cli::env::parse_env;
 use crate::cli::ui::{log, log_per_env, LogType};
+use crate::cli::util::parse_env;
 use crate::config::DatabaseConfig;
 use crate::Environment;
 use clap::{arg, value_parser, Command};
