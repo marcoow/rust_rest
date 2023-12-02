@@ -1,14 +1,19 @@
 use crate::routes::routes;
 use crate::state::AppState;
 use axum_on_rails::{
-    load_config,
+    load_config_for_env,
     test::helpers::{build_test_context, prepare_db, TestContext},
+    Environment,
 };
 use rust_rest_config::Config;
 use sqlx::postgres::PgPoolOptions;
 
+static CONFIG: tokio::sync::OnceCell<Config> = tokio::sync::OnceCell::const_new();
+
 pub async fn setup() -> TestContext {
-    let config: Config = load_config();
+    let config: &Config = CONFIG
+        .get_or_init(|| async { load_config_for_env::<Config>(&Environment::Test) })
+        .await;
 
     let db_config = prepare_db(&config.database).await;
     let db_pool = PgPoolOptions::new()
@@ -18,7 +23,7 @@ pub async fn setup() -> TestContext {
 
     let app = routes(AppState {
         db_pool: db_pool.clone(),
-        config,
+        config: config.clone(),
     });
 
     build_test_context(app, db_pool, db_config)
