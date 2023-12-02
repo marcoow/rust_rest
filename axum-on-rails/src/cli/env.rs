@@ -9,6 +9,8 @@ pub fn parse_env(sub_matches: &ArgMatches) -> Environment {
 
     if env == "test" {
         Environment::Test
+    } else if env == "production" {
+        Environment::Production
     } else {
         Environment::Development
     }

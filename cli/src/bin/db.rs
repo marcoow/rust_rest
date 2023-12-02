@@ -12,7 +12,7 @@ async fn main() {
             Environment::Test => {
                 dotenvy::from_filename(".env.test").ok();
             }
-            _ => { /* don't use and .env file for production */ }
+            _ => { /* don't use any .env file for production */ }
         }
         dotenv().ok();
 
