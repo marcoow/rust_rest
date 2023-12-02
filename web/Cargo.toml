@@ -1,0 +1,29 @@
+[package]
+name = "rust_rest_web"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+anyhow = "1.0"
+axum = "0.6"
+axum-on-rails = { path = "../axum-on-rails" }
+clap = "4.4"
+dotenvy = "0.15"
+rand = "0.8"
+refinery = { version = "0.8", features = ["tokio-postgres"]}
+rust_rest_config = { path = "../config" }
+rust_rest_db = { path = "../db" }
+serde = { version = "1.0", features = ["derive"] } 
+sqlx = { version = "0.7", features = [ "runtime-tokio", "tls-rustls", "postgres", "macros", "uuid", "migrate", "chrono" ] }
+tokio = { version = "1.33", features = ["full"] }
+tower-http = { version = "0.4", features = ["full"] }
+tracing = "0.1"
+uuid = { version = "1.5", features = ["serde"] }
+validator = { version = "0.16", features = ["derive"] }
+
+[dev-dependencies]
+serde_json = "1.0"
+tower = { version = "0.4", features = ["util"] }
+hyper = { version = "0.14", features = ["full"] }
+axum-on-rails-procs = { path = "../axum-on-rails-procs" }

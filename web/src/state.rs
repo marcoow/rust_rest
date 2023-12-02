@@ -1,4 +1,4 @@
-use crate::config::Config;
+use rust_rest_config::Config;
 use sqlx::postgres::{PgPool, PgPoolOptions};
 use std::env;
 

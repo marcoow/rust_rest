@@ -1,4 +1,3 @@
-use crate::entities::User;
 use crate::state::AppState;
 use axum::{
     extract::State,
@@ -6,6 +5,7 @@ use axum::{
     middleware::Next,
     response::Response,
 };
+use rust_rest_db::entities::User;
 use tracing::debug;
 use uuid::Uuid;
 
