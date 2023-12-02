@@ -71,5 +71,6 @@ where
         .merge(Env::prefixed("DATABASE_").map(|k| format!("database.{}", k.as_str()).into()))
         .extract()
         .expect("Could not read configuration!");
+
     config
 }
