@@ -1,22 +1,10 @@
-use axum_on_rails::{cli::db::cli, load_config, Environment};
-use dotenvy::dotenv;
+use axum_on_rails::{cli::db::cli, load_config_for_env};
 use rust_rest_config::Config;
 
 #[tokio::main]
 async fn main() {
     cli(|env| {
-        match env {
-            Environment::Development => {
-                dotenv().ok();
-            }
-            Environment::Test => {
-                dotenvy::from_filename(".env.test").ok();
-            }
-            _ => { /* don't use any .env file for production */ }
-        }
-        dotenv().ok();
-
-        let config: Config = load_config();
+        let config: Config = load_config_for_env(&env);
         config.database
     })
     .await;

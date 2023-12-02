@@ -1,3 +1,4 @@
+use dotenvy::dotenv;
 use figment::{
     providers::{Env, Format, Toml},
     Figment,
@@ -52,8 +53,26 @@ pub fn load_config<'a, T>() -> T
 where
     T: Deserialize<'a>,
 {
-    let environment = get_env();
-    let env_config_file = match environment {
+    let env = get_env();
+    load_config_for_env(&env)
+}
+
+pub fn load_config_for_env<'a, T>(env: &Environment) -> T
+where
+    T: Deserialize<'a>,
+{
+    match env {
+        Environment::Development => {
+            dotenv().ok();
+        }
+        Environment::Test => {
+            dotenvy::from_filename(".env.test").ok();
+        }
+        _ => { /* don't use any .env file for production */ }
+    }
+    dotenv().ok();
+
+    let env_config_file = match env {
         Environment::Development => "development.toml",
         Environment::Production => "production.toml",
         Environment::Test => "test.toml",
