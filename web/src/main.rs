@@ -1,5 +1,5 @@
 use axum::http::StatusCode;
-use axum_on_rails::{get_bind_addr, load_config};
+use axum_on_rails::{get_bind_addr, init_tracing, load_config};
 use dotenvy::dotenv;
 use tracing::info;
 
@@ -33,4 +33,17 @@ where
     E: std::error::Error,
 {
     (StatusCode::INTERNAL_SERVER_ERROR, err.to_string())
+}
+
+#[tokio::main]
+async fn main() {
+    init_tracing();
+
+    if let Err(e) = run().await {
+        tracing::error!(
+            error.msg = %e,
+            error.error_chain = ?e,
+            "Shutting down due to error"
+        )
+    }
 }

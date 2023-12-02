@@ -1,3 +1,4 @@
 [workspace]
-members = ["app", "cli", "config", "db", "web"]
+members = ["cli", "config", "db", "web"]
 resolver = "2"
+default-members = ["web"]

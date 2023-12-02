@@ -1577,16 +1577,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "rust_rest"
-version = "0.1.0"
-dependencies = [
- "axum-on-rails",
- "rust_rest_web",
- "tokio",
- "tracing",
-]
-
-[[package]]
 name = "rust_rest_cli"
 version = "0.1.0"
 dependencies = [
