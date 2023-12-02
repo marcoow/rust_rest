@@ -1,11 +1,11 @@
-use crate::routes::routes;
-use crate::state::AppState;
 use axum_on_rails::{
     load_config_for_env,
     test::helpers::{build_test_context, prepare_db, TestContext},
     Environment,
 };
 use rust_rest_config::Config;
+use rust_rest_web::routes::routes;
+use rust_rest_web::state::AppState;
 use sqlx::postgres::PgPoolOptions;
 
 static CONFIG: tokio::sync::OnceCell<Config> = tokio::sync::OnceCell::const_new();
