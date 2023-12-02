@@ -15,7 +15,6 @@ pub struct DatabaseConfig {
 impl Default for ServerConfig {
     fn default() -> Self {
         ServerConfig {
-            // TODO: this should be 0.0.0.0 for production
             interface: String::from("127.0.0.1"),
             port: 3000,
         }
