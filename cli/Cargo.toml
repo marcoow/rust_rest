@@ -14,6 +14,5 @@ path = "src/bin/generate.rs"
 
 [dependencies]
 axum-on-rails = { path = "../axum-on-rails" }
-dotenvy = "0.15"
 rust_rest_config = { path = "../config" }
 tokio = { version = "1.33", features = ["full"] }

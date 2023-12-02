@@ -1,6 +1,5 @@
 use axum::http::StatusCode;
 use axum_on_rails::{init_tracing, load_config};
-use dotenvy::dotenv;
 use tracing::info;
 
 mod controllers;
@@ -14,8 +13,6 @@ use rust_rest_config::Config;
 mod test;
 
 pub async fn run() -> anyhow::Result<()> {
-    dotenv().ok();
-
     let config: Config = load_config();
 
     let app_state = state::app_state(config.clone()).await;

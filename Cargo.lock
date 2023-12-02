@@ -1624,7 +1624,6 @@ name = "rust_rest_cli"
 version = "0.1.0"
 dependencies = [
  "axum-on-rails",
- "dotenvy",
  "rust_rest_config",
  "tokio",
 ]
@@ -1654,7 +1653,6 @@ dependencies = [
  "axum-on-rails",
  "axum-on-rails-procs",
  "clap",
- "dotenvy",
  "hyper",
  "rand",
  "refinery",

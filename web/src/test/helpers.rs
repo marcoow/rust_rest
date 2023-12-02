@@ -8,8 +8,6 @@ use rust_rest_config::Config;
 use sqlx::postgres::PgPoolOptions;
 
 pub async fn setup() -> TestContext {
-    dotenvy::from_filename(".env.test").ok();
-
     let config: Config = load_config();
 
     let db_config = prepare_db(&config.database).await;
