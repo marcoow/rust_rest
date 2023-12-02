@@ -106,3 +106,9 @@ Then run the tests:
 cargo test
 ```
 
+## License
+
+This project is developed by and &copy;
+[Mainmatter GmbH](http://mainmatter.com) and contributors. It is
+released under the
+[MIT License](LICENSE).
