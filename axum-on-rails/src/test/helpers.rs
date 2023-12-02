@@ -32,37 +32,31 @@ pub fn build_test_context(
 }
 
 pub async fn prepare_db(config: &DatabaseConfig) -> PgConnectOptions {
-    let db_url = Url::parse(&config.url).expect("Invalid DATABASE_URL!");
-    let config: PgConnectOptions =
-        ConnectOptions::from_url(&db_url).expect("Invalid DATABASE_URL!");
-    let db_name = config.get_database().unwrap();
+    let db_config = parse_db_config(&config.url);
+    let db_name = db_config.get_database().unwrap();
 
-    let root_db_config = config.clone().database("postgres");
+    let root_db_config = db_config.clone().database("postgres");
     let mut connection: PgConnection = Connection::connect_with(&root_db_config).await.unwrap();
 
-    let test_db_suffix: String = thread_rng()
-        .sample_iter(&Alphanumeric)
-        .take(30)
-        .map(char::from)
-        .collect();
-    let test_db_name = format!("{}_{}", db_name, test_db_suffix).to_lowercase();
+    let test_db_name = build_test_db_name(db_name);
 
     let query = format!("CREATE DATABASE {} TEMPLATE {}", test_db_name, db_name);
     connection.execute(query.as_str()).await.unwrap();
 
-    config.clone().database(&test_db_name)
+    let test_db_config = db_config.clone();
+    test_db_config.database(&test_db_name)
 }
 
 pub async fn teardown(context: TestContext) {
     drop(context.app);
     drop(context.db_pool);
-    let db_name = context.db_config.get_database().unwrap();
-    println!("cleaning up DB, {}", &db_name);
-    let root_db_config = context.db_config.clone().database("postgres");
 
+    let root_db_config = context.db_config.clone().database("postgres");
     let mut connection: PgConnection = Connection::connect_with(&root_db_config).await.unwrap();
 
-    let query = format!("DROP DATABASE IF EXISTS {}", db_name);
+    let test_db_name = context.db_config.get_database().unwrap();
+
+    let query = format!("DROP DATABASE IF EXISTS {}", test_db_name);
     connection.execute(query.as_str()).await.unwrap();
 }
 
@@ -84,4 +78,18 @@ pub async fn request(
     let request = request_builder.body(body);
 
     app.clone().oneshot(request.unwrap()).await.unwrap()
+}
+
+fn build_test_db_name(base_name: &str) -> String {
+    let test_db_suffix: String = thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(30)
+        .map(char::from)
+        .collect();
+    format!("{}_{}", base_name, test_db_suffix).to_lowercase()
+}
+
+fn parse_db_config(url: &str) -> PgConnectOptions {
+    let db_url = Url::parse(url).expect("Invalid DATABASE_URL!");
+    ConnectOptions::from_url(&db_url).expect("Invalid DATABASE_URL!")
 }
