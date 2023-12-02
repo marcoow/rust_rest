@@ -1,10 +1,11 @@
+use dotenvy::dotenv;
 use figment::{
-    providers::{Format, Toml},
+    providers::{Env, Format, Toml},
     Figment,
 };
 use serde::de::Deserialize;
+use std::env;
 use std::fmt::{Display, Formatter, Result};
-use std::{env, net::SocketAddr, str::FromStr};
 use tracing::info;
 use tracing_panic::panic_hook;
 use tracing_subscriber::{filter::EnvFilter, fmt, layer::SubscriberExt, util::SubscriberInitExt};
@@ -52,8 +53,26 @@ pub fn load_config<'a, T>() -> T
 where
     T: Deserialize<'a>,
 {
-    let environment = get_env();
-    let env_config_file = match environment {
+    let env = get_env();
+    load_config_for_env(&env)
+}
+
+pub fn load_config_for_env<'a, T>(env: &Environment) -> T
+where
+    T: Deserialize<'a>,
+{
+    match env {
+        Environment::Development => {
+            dotenv().ok();
+        }
+        Environment::Test => {
+            dotenvy::from_filename(".env.test").ok();
+        }
+        _ => { /* don't use any .env file for production */ }
+    }
+    dotenv().ok();
+
+    let env_config_file = match env {
         Environment::Development => "development.toml",
         Environment::Production => "production.toml",
         Environment::Test => "test.toml",
@@ -65,24 +84,11 @@ where
             "config/environments/{}",
             env_config_file
         )))
+        .merge(Env::prefixed("SERVER_").map(|k| format!("server.{}", k.as_str()).into()))
+        .merge(Env::prefixed("DATABASE_").map(|k| format!("database.{}", k.as_str()).into()))
         .extract()
         .expect("Could not read configuration!");
     config
-}
-
-pub fn get_bind_addr() -> SocketAddr {
-    // TODO: come up with a better name for the env var!
-    let iface = match env::var("APP_BIND_IFACE") {
-        Ok(val) => val,
-        Err(_) => String::from("127.0.0.1"),
-    };
-    let port = match env::var("APP_PORT") {
-        Ok(val) => val,
-        Err(_) => String::from("3000"),
-    };
-
-    SocketAddr::from_str(format!("{}:{}", iface, port).as_str())
-        .unwrap_or_else(|_| panic!(r#"Could not parse bind addr "{}:{}"!"#, iface, port))
 }
 
 pub fn init_tracing() {

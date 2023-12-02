@@ -9,7 +9,6 @@ anyhow = "1.0"
 axum = "0.6"
 axum-on-rails = { path = "../axum-on-rails" }
 clap = "4.4"
-dotenvy = "0.15"
 rand = "0.8"
 refinery = { version = "0.8", features = ["tokio-postgres"]}
 rust_rest_config = { path = "../config" }

@@ -7,7 +7,7 @@ edition = "2021"
 axum = "0.6"
 clap = "4.4"
 dotenvy = "0.15"
-figment = { version = "0.10", features = ["toml"] }
+figment = { version = "0.10", features = ["toml", "env"] }
 rand = "0.8"
 refinery = { version = "0.8", features = ["tokio-postgres"]}
 serde = { version = "1.0", features = ["derive"] } 

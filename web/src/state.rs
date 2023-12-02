@@ -1,6 +1,5 @@
 use rust_rest_config::Config;
 use sqlx::postgres::{PgPool, PgPoolOptions};
-use std::env;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -9,10 +8,8 @@ pub struct AppState {
 }
 
 pub async fn app_state(config: Config) -> AppState {
-    let db_url = env::var("DATABASE_URL").expect("No DATABASE_URL set – cannot start server!");
-
     let db_pool = PgPoolOptions::new()
-        .connect(db_url.as_str())
+        .connect(config.database.url.as_str())
         .await
         .expect("Could not connect to database!");
 

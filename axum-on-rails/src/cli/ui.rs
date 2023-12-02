@@ -1,4 +1,4 @@
-use crate::cli::env::Environment;
+use crate::Environment;
 
 pub enum LogType {
     Info,
@@ -6,10 +6,17 @@ pub enum LogType {
     Error,
 }
 
-pub fn log_per_env(env: &Environment, log_type: LogType, dev_log: &str, test_log: &str) {
+pub fn log_per_env(
+    env: &Environment,
+    log_type: LogType,
+    dev_log: &str,
+    test_log: &str,
+    production_log: &str,
+) {
     match env {
         Environment::Development => log(log_type, dev_log),
         Environment::Test => log(log_type, test_log),
+        Environment::Production => log(log_type, production_log),
     }
 }
 
