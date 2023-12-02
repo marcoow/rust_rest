@@ -1,5 +1,5 @@
 use axum_on_rails::{
-    load_config_for_env,
+    load_config,
     test::helpers::{build_test_context, prepare_db, TestContext},
     Environment,
 };
@@ -12,7 +12,7 @@ static CONFIG: tokio::sync::OnceCell<Config> = tokio::sync::OnceCell::const_new(
 
 pub async fn setup() -> TestContext {
     let config: &Config = CONFIG
-        .get_or_init(|| async { load_config_for_env::<Config>(&Environment::Test) })
+        .get_or_init(|| async { load_config::<Config>(&Environment::Test) })
         .await;
 
     let db_config = prepare_db(&config.database).await;

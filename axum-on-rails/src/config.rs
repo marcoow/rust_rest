@@ -1,4 +1,4 @@
-use crate::util::{get_env, Environment};
+use crate::util::Environment;
 use dotenvy::dotenv;
 use figment::{
     providers::{Env, Format, Toml},
@@ -40,15 +40,7 @@ impl ServerConfig {
     }
 }
 
-pub fn load_config<'a, T>() -> T
-where
-    T: Deserialize<'a>,
-{
-    let env = get_env();
-    load_config_for_env(&env)
-}
-
-pub fn load_config_for_env<'a, T>(env: &Environment) -> T
+pub fn load_config<'a, T>(env: &Environment) -> T
 where
     T: Deserialize<'a>,
 {
