@@ -2,7 +2,7 @@
 
 This is a simply REST server written in Rust with
 [axum](https://crates.io/crates/axum) and
-[tokio-postgres](https://crates.io/crates/tokio-postgres).
+[sqlx](https://crates.io/crates/sqlx).
 
 I'm using this to figure out a good structure for such a project and answer
 questions like:
