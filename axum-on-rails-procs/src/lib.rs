@@ -14,7 +14,7 @@ pub fn test(_: TokenStream, item: TokenStream) -> TokenStream {
     );
 
     let setup = quote! {
-        let context = setup().await;
+        let context = common::setup().await;
     };
 
     let teardown = quote! {
