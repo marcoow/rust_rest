@@ -1,10 +1,5 @@
+use crate::Environment;
 use clap::ArgMatches;
-
-#[derive(Debug)]
-pub enum Environment {
-    Development,
-    Test,
-}
 
 pub fn parse_env(sub_matches: &ArgMatches) -> Environment {
     let env = sub_matches

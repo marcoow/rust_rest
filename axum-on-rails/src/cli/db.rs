@@ -1,5 +1,7 @@
-use crate::cli::env::{parse_env, Environment};
+use crate::cli::env::parse_env;
 use crate::cli::ui::{log, log_per_env, LogType};
+use crate::config::DatabaseConfig;
+use crate::Environment;
 use clap::{arg, value_parser, Command};
 use sqlx::postgres::{PgConnectOptions, PgConnection};
 use sqlx::{
@@ -10,7 +12,6 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 use url::Url;
-use crate::config::DatabaseConfig;
 
 fn commands() -> Command {
     Command::new("db")
@@ -37,33 +38,46 @@ fn commands() -> Command {
                 .about("Reset the database (drop, re-create, migrate)")
                 .arg(arg!(env: -e <ENV>).value_parser(value_parser!(String))),
         )
-        .subcommand(Command::new("seed").about("Seed the database"))
+        .subcommand(
+            Command::new("seed")
+                .about("Seed the database")
+                .arg(arg!(env: -e <ENV>).value_parser(value_parser!(String))),
+        )
 }
 
-pub async fn cli(config: &DatabaseConfig) {
+pub async fn cli<F>(load_config: F)
+where
+    F: Fn(&Environment) -> DatabaseConfig,
+{
     let matches = commands().get_matches();
 
     match matches.subcommand() {
         Some(("drop", sub_matches)) => {
             let env = parse_env(sub_matches);
-            drop(&env, config).await;
+            let config = load_config(&env);
+            drop(&env, &config).await;
         }
         Some(("create", sub_matches)) => {
             let env = parse_env(sub_matches);
-            create(&env, config).await;
+            let config = load_config(&env);
+            create(&env, &config).await;
         }
         Some(("migrate", sub_matches)) => {
             let env = parse_env(sub_matches);
-            migrate(&env, config).await;
+            let config = load_config(&env);
+            migrate(&env, &config).await;
         }
         Some(("reset", sub_matches)) => {
             let env = parse_env(sub_matches);
-            drop(&env, config).await;
-            create(&env, config).await;
-            migrate(&env, config).await;
+            let config = load_config(&env);
+            drop(&env, &config).await;
+            create(&env, &config).await;
+            migrate(&env, &config).await;
         }
-        Some(("seed", _sub_matches)) => {
-            seed(config).await;
+        Some(("seed", sub_matches)) => {
+            let env = parse_env(sub_matches);
+            let config = load_config(&env);
+            seed(&env, &config).await;
         }
         _ => unreachable!(),
     }
@@ -75,6 +89,7 @@ async fn drop(env: &Environment, config: &DatabaseConfig) {
         LogType::Info,
         "Dropping development database…",
         "Dropping test database…",
+        "Dropping production database…",
     );
 
     let db_config = get_db_config(config);
@@ -102,6 +117,7 @@ async fn create(env: &Environment, config: &DatabaseConfig) {
         LogType::Info,
         "Creating development database…",
         "Creating test database…",
+        "Creating production database…",
     );
 
     let db_config = get_db_config(config);
@@ -129,6 +145,7 @@ async fn migrate(env: &Environment, config: &DatabaseConfig) {
         LogType::Info,
         "Migrating development database…",
         "Migrating test database…",
+        "Migrating production database…",
     );
 
     let db_config = get_db_config(config);
@@ -175,8 +192,14 @@ async fn migrate(env: &Environment, config: &DatabaseConfig) {
     );
 }
 
-async fn seed(config: &DatabaseConfig) {
-    log(LogType::Info, "Seeding development database…");
+async fn seed(env: &Environment, config: &DatabaseConfig) {
+    log_per_env(
+        env,
+        LogType::Info,
+        "Seeding development database…",
+        "Seeding test database…",
+        "Seeding production database…",
+    );
 
     let mut connection = get_db_client(config).await;
 

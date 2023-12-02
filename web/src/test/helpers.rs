@@ -1,10 +1,10 @@
-use crate::config::Config;
 use crate::routes::routes;
 use crate::state::AppState;
 use axum_on_rails::{
     load_config,
     test::helpers::{build_test_context, prepare_db, TestContext},
 };
+use rust_rest_config::Config;
 use sqlx::postgres::PgPoolOptions;
 
 pub async fn setup() -> TestContext {
