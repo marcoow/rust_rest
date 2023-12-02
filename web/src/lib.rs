@@ -1,5 +1,5 @@
 use axum::http::StatusCode;
-use axum_on_rails::load_config;
+use axum_on_rails::{get_env, load_config_for_env};
 use rust_rest_config::Config;
 use tracing::info;
 
@@ -9,9 +9,10 @@ pub mod routes;
 pub mod state;
 
 pub async fn run() -> anyhow::Result<()> {
-    let config: Config = load_config();
+    let env = get_env();
+    let config: Config = load_config_for_env(&env);
 
-    let app_state = state::app_state(config.clone()).await;
+    let app_state = state::app_state(config.clone(), env).await;
     let app = routes::routes(app_state);
 
     let addr = config.server.get_bind_addr();

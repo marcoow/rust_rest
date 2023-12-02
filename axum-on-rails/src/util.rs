@@ -4,7 +4,7 @@ use tracing::info;
 use tracing_panic::panic_hook;
 use tracing_subscriber::{filter::EnvFilter, fmt, layer::SubscriberExt, util::SubscriberInitExt};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Environment {
     Development,
     Production,
