@@ -7,13 +7,11 @@ use rust_rest_config::Config;
 use rust_rest_web::routes::routes;
 use rust_rest_web::state::AppState;
 use sqlx::postgres::PgPoolOptions;
-
-static CONFIG: tokio::sync::OnceCell<Config> = tokio::sync::OnceCell::const_new();
+use std::cell::OnceCell;
 
 pub async fn setup() -> TestContext {
-    let config: &Config = CONFIG
-        .get_or_init(|| async { load_config::<Config>(&Environment::Test) })
-        .await;
+    let init_config: OnceCell<Config> = OnceCell::new();
+    let config = init_config.get_or_init(|| load_config(&Environment::Test));
 
     let db_config = prepare_db(&config.database).await;
     let db_pool = PgPoolOptions::new()
