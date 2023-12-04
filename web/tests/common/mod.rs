@@ -22,9 +22,7 @@ pub async fn setup() -> TestContext {
         .expect("Could not connect to database!");
 
     let app = routes(AppState {
-        env: Environment::Test,
         db_pool: db_pool.clone(),
-        config: config.clone(),
     });
 
     build_test_context(app, db_pool, db_config)
