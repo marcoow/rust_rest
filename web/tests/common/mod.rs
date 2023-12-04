@@ -1,4 +1,4 @@
-use axum_on_rails::{
+use pacesetter::{
     load_config,
     test::helpers::{build_test_context, prepare_db, TestContext},
     Environment,

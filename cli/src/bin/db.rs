@@ -1,4 +1,4 @@
-use axum_on_rails::{cli::db::cli, load_config};
+use pacesetter::{cli::db::cli, load_config};
 use rust_rest_config::Config;
 
 #[tokio::main]

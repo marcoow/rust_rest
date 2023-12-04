@@ -1,4 +1,4 @@
-use axum_on_rails::config::{DatabaseConfig, ServerConfig};
+use pacesetter::config::{DatabaseConfig, ServerConfig};
 use serde::Deserialize;
 
 #[derive(Deserialize, Clone, Debug)]

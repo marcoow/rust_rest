@@ -230,38 +230,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "axum-on-rails"
-version = "0.1.0"
-dependencies = [
- "axum",
- "clap",
- "dotenvy",
- "figment",
- "hyper",
- "rand",
- "refinery",
- "serde",
- "serde_json",
- "sqlx",
- "tokio",
- "tower",
- "tower-http",
- "tracing",
- "tracing-panic",
- "tracing-subscriber",
- "url",
- "validator",
-]
-
-[[package]]
-name = "axum-on-rails-procs"
-version = "0.1.0"
-dependencies = [
- "quote",
- "syn 1.0.109",
-]
-
-[[package]]
 name = "backtrace"
 version = "0.3.69"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1233,6 +1201,40 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b15813163c1d831bf4a13c3610c05c0d03b39feb07f7e09fa234dac9b15aaf39"
 
 [[package]]
+name = "pacesetter"
+version = "0.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8a360ce5e96b4266ac9b676d8e73d650de0fa5e58a4daaba1a8ec349c066f883"
+dependencies = [
+ "axum",
+ "clap",
+ "dotenvy",
+ "figment",
+ "rand",
+ "refinery",
+ "serde",
+ "sqlx",
+ "tokio",
+ "tower",
+ "tower-http",
+ "tracing",
+ "tracing-panic",
+ "tracing-subscriber",
+ "url",
+ "validator",
+]
+
+[[package]]
+name = "pacesetter-procs"
+version = "0.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1fdb90c9e221b5cb73d0ca0f627d90dbace9262e88e86b481e35344e43b4cf4e"
+dependencies = [
+ "quote",
+ "syn 1.0.109",
+]
+
+[[package]]
 name = "parking_lot"
 version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1623,7 +1625,7 @@ dependencies = [
 name = "rust_rest_cli"
 version = "0.1.0"
 dependencies = [
- "axum-on-rails",
+ "pacesetter",
  "rust_rest_config",
  "tokio",
 ]
@@ -1632,7 +1634,7 @@ dependencies = [
 name = "rust_rest_config"
 version = "0.1.0"
 dependencies = [
- "axum-on-rails",
+ "pacesetter",
  "serde",
 ]
 
@@ -1650,10 +1652,10 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "axum",
- "axum-on-rails",
- "axum-on-rails-procs",
  "clap",
  "hyper",
+ "pacesetter",
+ "pacesetter-procs",
  "rand",
  "refinery",
  "rust_rest_config",

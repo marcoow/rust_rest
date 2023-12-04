@@ -2,8 +2,8 @@ use axum::{
     body::Body,
     http::{self, Method},
 };
-use axum_on_rails::test::helpers::{request, teardown, TestContext};
-use axum_on_rails_procs::test;
+use pacesetter::test::helpers::{request, teardown, TestContext};
+use pacesetter_procs::test;
 use hyper::StatusCode;
 use rust_rest_db::entities::Task;
 use serde::Serialize;

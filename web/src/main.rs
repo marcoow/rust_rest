@@ -1,4 +1,4 @@
-use axum_on_rails::init_tracing;
+use pacesetter::init_tracing;
 use rust_rest_web::run;
 
 #[tokio::main]

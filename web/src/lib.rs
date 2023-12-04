@@ -1,5 +1,5 @@
 use axum::http::StatusCode;
-use axum_on_rails::{get_env, load_config};
+use pacesetter::{get_env, load_config};
 use rust_rest_config::Config;
 use tracing::info;
 

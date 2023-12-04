@@ -13,6 +13,6 @@ name = "generate"
 path = "src/bin/generate.rs"
 
 [dependencies]
-axum-on-rails = { path = "../axum-on-rails" }
+pacesetter = "0.0.1"
 rust_rest_config = { path = "../config" }
 tokio = { version = "1.33", features = ["full"] }
