@@ -2,9 +2,9 @@ use axum::{
     body::Body,
     http::{self, Method},
 };
+use hyper::StatusCode;
 use pacesetter::test::helpers::{request, teardown, TestContext};
 use pacesetter_procs::test;
-use hyper::StatusCode;
 use rust_rest_db::entities::Task;
 use serde::Serialize;
 use serde_json::json;
