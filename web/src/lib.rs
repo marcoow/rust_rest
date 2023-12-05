@@ -1,6 +1,7 @@
 use axum::http::StatusCode;
 use pacesetter::{get_env, load_config};
 use rust_rest_config::Config;
+use std::fmt::{Debug, Display};
 use tracing::info;
 
 mod controllers;
@@ -24,9 +25,17 @@ pub async fn run() -> anyhow::Result<()> {
     Ok(())
 }
 
-pub fn internal_error<E>(err: E) -> (StatusCode, String)
+/// Helper function to create an internal error response while
+/// taking care to log the error itself.
+pub fn internal_error<E>(e: E) -> StatusCode
 where
-    E: std::error::Error,
+    // Some "error-like" types (e.g. `anyhow::Error`) don't implement the error trait, therefore
+    // we "downgrade" to simply requiring `Debug` and `Display`, the traits
+    // we actually need for logging purposes.
+    E: Debug + Display,
 {
-    (StatusCode::INTERNAL_SERVER_ERROR, err.to_string())
+    tracing::error!(err.msg = %e, err.details = ?e, "Internal server error");
+    // We don't want to leak internal implementation details to the client
+    // via the error response, so we just return an opaque internal server.
+    StatusCode::INTERNAL_SERVER_ERROR
 }

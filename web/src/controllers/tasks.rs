@@ -8,9 +8,7 @@ use tracing::info;
 use uuid::Uuid;
 use validator::Validate;
 
-pub async fn get_tasks(
-    State(app_state): State<AppState>,
-) -> Result<Json<Vec<Task>>, (StatusCode, String)> {
+pub async fn get_tasks(State(app_state): State<AppState>) -> Result<Json<Vec<Task>>, StatusCode> {
     let tasks = sqlx::query_as!(Task, "SELECT id, description FROM tasks")
         .fetch_all(&app_state.db_pool)
         .await
@@ -24,7 +22,7 @@ pub async fn get_tasks(
 pub async fn get_task(
     State(app_state): State<AppState>,
     Path(id): Path<Uuid>,
-) -> Result<Json<Task>, (StatusCode, String)> {
+) -> Result<Json<Task>, StatusCode> {
     let task = sqlx::query_as!(Task, "SELECT id, description FROM tasks WHERE id = $1", id)
         .fetch_one(&app_state.db_pool)
         .await
@@ -56,7 +54,7 @@ pub async fn create_task(
             )
             .fetch_one(&app_state.db_pool)
             .await
-            .map_err(internal_error)?;
+            .map_err(|e| (internal_error(e), "".into()))?;
 
             let id = record.id;
 
@@ -64,6 +62,9 @@ pub async fn create_task(
 
             Ok(Json(task))
         }
-        Err(err) => Err((StatusCode::UNPROCESSABLE_ENTITY, err.to_string())),
+        Err(err) => {
+            info!(err = ?err, "Validation failed");
+            Err((StatusCode::UNPROCESSABLE_ENTITY, err.to_string()))
+        }
     }
 }
