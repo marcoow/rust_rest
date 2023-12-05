@@ -6,7 +6,7 @@ use axum::{
     response::Response,
 };
 use rust_rest_db::entities::User;
-use tracing::debug;
+use tracing::Span;
 use uuid::Uuid;
 
 #[allow(dead_code)]
@@ -16,6 +16,7 @@ struct CurrentUser {
     name: String,
 }
 
+#[tracing::instrument(skip_all, fields(rejection_reason = tracing::field::Empty))]
 pub async fn auth<B>(
     State(app_state): State<AppState>,
     mut req: Request<B>,
@@ -29,7 +30,7 @@ pub async fn auth<B>(
     let auth_header = if let Some(auth_header) = auth_header {
         auth_header
     } else {
-        debug!("User unauthorized – header missing");
+        log_rejection_reason("Missing authorization header");
         return Err(StatusCode::UNAUTHORIZED);
     };
 
@@ -50,9 +51,17 @@ pub async fn auth<B>(
             Ok(next.run(req).await)
         }
         Err(sqlx::Error::RowNotFound) => {
-            debug!(r#"User unauthorized – no user for token "{}""#, auth_header);
+            log_rejection_reason("Unknown user token");
             Err(StatusCode::UNAUTHORIZED)
         }
-        _ => Err(StatusCode::INTERNAL_SERVER_ERROR),
+        e => {
+            tracing::error!(err.msg = %e, error.details = ?e, "Database error");
+            log_rejection_reason("Database error");
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
     }
+}
+
+fn log_rejection_reason(msg: &str) {
+    Span::current().record("rejection_reason", msg);
 }
