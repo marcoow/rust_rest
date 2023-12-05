@@ -1,6 +1,6 @@
 # Rust REST
 
-This is a simply REST server written in Rust with
+This is a simple REST server written in Rust with
 [axum](https://crates.io/crates/axum) and
 [sqlx](https://crates.io/crates/sqlx).
 
