@@ -54,7 +54,7 @@ pub async fn auth<B>(
             log_rejection_reason("Unknown user token");
             Err(StatusCode::UNAUTHORIZED)
         }
-        e => {
+        Err(e) => {
             tracing::error!(err.msg = %e, error.details = ?e, "Database error");
             log_rejection_reason("Database error");
             Err(StatusCode::INTERNAL_SERVER_ERROR)
