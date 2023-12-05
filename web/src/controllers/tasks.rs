@@ -62,9 +62,9 @@ pub async fn create_task(
 
             Ok(Json(task))
         }
-        Err(err) => {
+        Err(e) => {
             info!(err.msg = %e, err.details = ?e, "Validation failed");
-            Err((StatusCode::UNPROCESSABLE_ENTITY, err.to_string()))
+            Err((StatusCode::UNPROCESSABLE_ENTITY, e.to_string()))
         }
     }
 }
