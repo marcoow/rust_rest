@@ -44,27 +44,24 @@ pub async fn create_task(
     State(app_state): State<AppState>,
     Json(payload): Json<CreateTask>,
 ) -> Result<Json<Task>, (StatusCode, String)> {
-    match payload.validate() {
-        Ok(_) => {
-            let description = payload.description;
-
-            let record = sqlx::query!(
-                "INSERT INTO tasks (description) VALUES ($1) RETURNING id",
-                description
-            )
-            .fetch_one(&app_state.db_pool)
-            .await
-            .map_err(|e| (internal_error(e), "".into()))?;
-
-            let id = record.id;
-
-            let task = Task { id, description };
-
-            Ok(Json(task))
-        }
-        Err(e) => {
-            info!(err.msg = %e, err.details = ?e, "Validation failed");
-            Err((StatusCode::UNPROCESSABLE_ENTITY, e.to_string()))
-        }
+    if let Err(e) = payload.validate() {
+        info!(err.msg = %e, err.details = ?e, "Validation failed");
+        return Err((StatusCode::UNPROCESSABLE_ENTITY, e.to_string()));
     }
+
+    let description = payload.description;
+
+    let record = sqlx::query!(
+        "INSERT INTO tasks (description) VALUES ($1) RETURNING id",
+        description
+    )
+    .fetch_one(&app_state.db_pool)
+    .await
+    .map_err(|e| (internal_error(e), "".into()))?;
+
+    let id = record.id;
+
+    let task = Task { id, description };
+
+    Ok(Json(task))
 }
