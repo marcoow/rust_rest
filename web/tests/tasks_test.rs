@@ -1,3 +1,5 @@
+use axum::body::Bytes;
+use axum::response::Response;
 use axum::{
     body::Body,
     http::{self, Method},
@@ -36,8 +38,7 @@ async fn test_get_tasks(context: &TestContext) {
 
     assert_eq!(response.status(), StatusCode::OK);
 
-    let body = hyper::body::to_bytes(response.into_body()).await.unwrap();
-    let tasks: TasksList = serde_json::from_slice::<TasksList>(&body).unwrap();
+    let tasks: TasksList = json_body::<TasksList>(response).await;
     assert_eq!(tasks.len(), 1);
     assert_eq!(tasks.get(0).unwrap().description, "Test Task");
 }
@@ -85,8 +86,7 @@ async fn test_create_tasks_authorized(context: &TestContext) {
     )
     .await;
 
-    let body = hyper::body::to_bytes(response.into_body()).await.unwrap();
-    let task: Task = serde_json::from_slice::<Task>(&body).unwrap();
+    let task: Task = json_body::<Task>(response).await;
     assert_eq!(task.description, "my task");
 }
 
@@ -112,8 +112,22 @@ async fn test_get_task(context: &TestContext) {
 
     assert_eq!(response.status(), StatusCode::OK);
 
-    let body = hyper::body::to_bytes(response.into_body()).await.unwrap();
-    let task: Task = serde_json::from_slice::<Task>(&body).unwrap();
+    let task: Task = json_body::<Task>(response).await;
     assert_eq!(task.id, task_id);
     assert_eq!(task.description, "Test Task");
+}
+
+async fn json_body<T>(response: Response<Body>) -> T
+where
+    T: serde::de::DeserializeOwned,
+{
+    let body = response_body(response).await;
+    serde_json::from_slice::<T>(&body).expect("Failed to deserialize JSON body")
+}
+
+async fn response_body(response: Response<Body>) -> Bytes {
+    // We don't care about the size limit in tests.
+    axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .expect("Failed to read response body")
 }
