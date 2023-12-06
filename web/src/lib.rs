@@ -1,7 +1,9 @@
 use axum::http::StatusCode;
+use axum::serve;
 use pacesetter::{get_env, load_config};
 use rust_rest_config::Config;
 use std::fmt::{Debug, Display};
+use tokio::net::TcpListener;
 use tracing::info;
 
 mod controllers;
@@ -17,10 +19,9 @@ pub async fn run() -> anyhow::Result<()> {
     let app = routes::routes(app_state);
 
     let addr = config.server.get_bind_addr();
+    let listener = TcpListener::bind(&addr).await?;
     info!("Listening on {}", addr);
-    axum::Server::bind(&addr)
-        .serve(app.into_make_service())
-        .await?;
+    serve(listener, app.into_make_service()).await?;
 
     Ok(())
 }

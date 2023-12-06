@@ -1,4 +1,5 @@
 use crate::state::AppState;
+use axum::body::Body;
 use axum::{
     extract::State,
     http::{self, Request, StatusCode},
@@ -17,10 +18,10 @@ struct CurrentUser {
 }
 
 #[tracing::instrument(skip_all, fields(rejection_reason = tracing::field::Empty))]
-pub async fn auth<B>(
+pub async fn auth(
     State(app_state): State<AppState>,
-    mut req: Request<B>,
-    next: Next<B>,
+    mut req: Request<Body>,
+    next: Next,
 ) -> Result<Response, StatusCode> {
     let auth_header = req
         .headers()
