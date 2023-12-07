@@ -1,5 +1,7 @@
 # Rust REST
 
+**This is archived – life goes on at https://github.com/marcoow/pacesetter**
+
 This is a simple REST server written in Rust with
 [axum](https://crates.io/crates/axum) and
 [sqlx](https://crates.io/crates/sqlx).
